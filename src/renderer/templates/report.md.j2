@@ -1,0 +1,67 @@
+# 📰 ZJU Info 日报 — {{ report.date }}
+
+> {{ report.editorial }}
+
+---
+
+## 📊 今日统计
+
+| 指标 | 数值 |
+|------|------|
+| 采集源 | {{ report.stats.sources_succeeded }} 成功 / {{ report.stats.sources_failed }} 失败 |
+| 采集总数 | {{ report.stats.total_fetched }} 条 |
+| 去重后 | {{ report.stats.after_dedup }} 条 |
+| LLM 筛选保留 | {{ report.stats.after_filter }} 条 |
+| 高重要度 | {{ report.stats.high_importance }} 条 |
+
+---
+
+{%- if report.items -%}
+{%- set categories = {"科研": [], "竞赛": [], "出国": [], "就业": [], "校内通知": [], "其他": []} -%}
+{%- for item in report.items -%}
+{%- set cat = item.category if item.category in categories else "其他" -%}
+{%- set _ = categories[cat].append(item) -%}
+{%- endfor -%}
+
+{%- set cat_names = {"科研": "🧪 科研动态", "竞赛": "🏆 竞赛活动", "出国": "✈️ 出国交流", "就业": "💼 就业实习", "校内通知": "📋 校内通知", "其他": "💡 其他关注"} -%}
+
+{%- for cat_key, cat_label in cat_names.items() -%}
+{%- set cat_items = categories[cat_key] -%}
+{%- if cat_items %}
+
+## {{ cat_label }}
+
+{% for item in cat_items %}
+### {{ item.title }}
+
+{% if item.importance == "高" %}🔴 **高重要度**{% elif item.importance == "中" %}🟡 中等重要{% else %}🟢 参考信息{% endif %}{% if item.deadline %} | ⏰ 截止: {{ item.deadline }}{% endif %}
+
+> {{ item.summary }}
+
+{% if item.action_required and item.action_hint -%}
+⚠️ **需要行动**: {{ item.action_hint }}
+{% endif -%}
+
+🔗 [原文链接]({{ item.source_url }}) | 来源: {{ item.source_name }}
+
+---
+{% endfor -%}
+{%- endif -%}
+{%- endfor -%}
+{%- else %}
+> 今日无相关内容。
+{%- endif %}
+
+## 📌 今日优先行动项
+
+{% if report.top_actions -%}
+{% for action in report.top_actions %}
+{{ loop.index }}. {{ action }}
+{%- endfor -%}
+{% else %}
+> 今日无紧急行动项。
+{%- endif %}
+
+---
+
+*由 ZJU Info Agent 自动生成于 {{ report.generated_at }}*

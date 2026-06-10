@@ -116,13 +116,13 @@ sources:
   l0_rss:
     - name: "arXiv CS.AI"
       url: "https://arxiv.org/rss/cs.AI"
-      enabled: true
+      enabled: false
       keywords: ["agent", "LLM", "reinforcement learning", "RAG", "multi-agent"]
       max_items: 15
 
     - name: "arXiv CS.LG"
       url: "https://arxiv.org/rss/cs.LG"
-      enabled: true
+      enabled: false
       keywords: ["deep learning", "transformer", "optimization", "generative model"]
       max_items: 10
 
@@ -152,32 +152,11 @@ sources:
       max_items: 10
 
   l0_html:
-    - name: "浙江大学官网新闻"
-      url: "https://www.zju.edu.cn/news/"
-      enabled: true
-      keywords: ["竞赛", "奖学金", "出国", "交流", "申请", "创新", "科研"]
-      selector: ".news-list li"
-      max_items: 10
-
-    - name: "挑战杯官网"
-      url: "https://www.tiaozhanbei.net"
-      enabled: false
-      keywords: ["通知", "报名", "结果", "获奖", "截止"]
-      selector: ".news-list li"
-      max_items: 10
-
-    - name: "互联网+ 创新创业大赛"
-      url: "https://cy.ncss.cn"
-      enabled: false
-      keywords: ["报名", "通知", "决赛", "获奖"]
-      selector: ".news-list li"
-      max_items: 10
-
     - name: "全国大学生数学建模竞赛"
-      url: "https://www.mcm.edu.cn"
-      enabled: false
+      url: "https://www.cmathc.org.cn/"
+      enabled: true
       keywords: ["报名", "赛题", "获奖", "通知"]
-      selector: ".news-list li"
+      selector: "ul.newslist li"                    # ✅ 已验证：58 条
       max_items: 10
 
     - name: "CSC 国家留学基金委"
@@ -187,27 +166,6 @@ sources:
       selector: ".list_content li"
       max_items: 10
 
-    - name: "浙江大学国际合作处"
-      url: "https://www.ir.zju.edu.cn"                  # 注意：旧域名 ico.zju.edu.cn 已迁移
-      enabled: false
-      keywords: ["交流", "出国", "交换", "奖学金", "项目"]
-      selector: ".news-list li"
-      max_items: 10
-
-    - name: "浙江大学研究生院公告"
-      url: "https://grs.zju.edu.cn"                 # 需在浏览器中登录后确认具体公告页 URL
-      enabled: false
-      keywords: ["招生", "答辩", "奖学金", "评优"]
-      selector: ".list li"
-      max_items: 10
-
-    - name: "浙江大学就业指导中心"
-      url: "https://www.career.zju.edu.cn"
-      enabled: false
-      keywords: ["招聘", "宣讲会", "实习", "校招"]
-      selector: ".news-list li"
-      max_items: 10
-
     - name: "蓝桥杯大赛"
       url: "https://www.lanqiao.cn"
       enabled: false
@@ -215,18 +173,25 @@ sources:
       selector: ".news-list li"
       max_items: 10
 
+    - name: "浙江大学国际合作处"
+      url: "https://www.ir.zju.edu.cn"
+      enabled: false                                # ❌ 连接拒绝，需校内网或 VPN
+      keywords: ["交流", "出国", "交换", "奖学金", "项目"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "浙江大学研究生院公告"
+      url: "https://grs.zju.edu.cn"
+      enabled: false                                # 需登录后确认具体 URL
+      keywords: ["招生", "答辩", "奖学金", "评优"]
+      selector: ".list li"
+      max_items: 10
+
     - name: "ICPC 国际大学生程序设计竞赛"
       url: "https://icpc.global"
       enabled: false
       keywords: ["regional", "final", "registration"]
       selector: ".news-list li"
-      max_items: 10
-
-    - name: "CCPC 中国大学生程序设计竞赛"
-      url: "https://ccpc.io"
-      enabled: false
-      keywords: ["报名", "通知", "比赛", "结果"]
-      selector: ".news-item"
       max_items: 10
 
     # 教授/实验室主页（变更检测模式）
@@ -238,19 +203,56 @@ sources:
       max_items: 5
 
   # ── L1: 动态渲染页面（需 Playwright 打开浏览器）──────────────────
+  # 以下网站为 SPA（Vue/React），静态 HTML 为空壳，必须用真实浏览器渲染。
+  # wait_selector: 等待此元素出现才认为页面加载完成（可先用 "a" 占位再实测调整）
+  # selector: 实际提取新闻链接的 CSS 选择器
   l1_playwright:
+    - name: "浙江大学新闻官网"
+      url: "http://www.news.zju.edu.cn"
+      enabled: true                                 # 用户已修正 URL
+      keywords: ["竞赛", "奖学金", "出国", "交流", "申请", "创新", "科研","启真"]
+      wait_selector: ".news_list"                            # 页面出现链接即认为渲染完成
+      selector: ".news_list li .news_title a"                                 # 需 F12 确认新闻列表的实际选择器后替换
+      max_items: 10
+
+    - name: "挑战杯官网"
+      url: "https://www.tiaozhanbei.net"
+      enabled: true
+      keywords: ["通知", "报名", "结果", "获奖", "截止"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "互联网+ 创新创业大赛"
+      url: "https://cy.ncss.cn"
+      enabled: false
+      keywords: ["报名", "通知", "决赛", "获奖"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "浙江大学就业指导中心"
+      url: "https://www.career.zju.edu.cn"
+      enabled: false
+      keywords: ["招聘", "宣讲会", "实习", "校招"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "CCPC 中国大学生程序设计竞赛"
+      url: "https://ccpc.io"
+      enabled: false
+      keywords: ["报名", "通知", "比赛", "结果"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
     - name: "牛客网竞赛"
       url: "https://ac.nowcoder.com/acm/contest/vip-index"
       enabled: false
       keywords: ["报名", "进行中", "即将开始"]
-      wait_selector: ".contest-list"
-      max_items: 8
-
-    - name: "赛氪竞赛"
-      url: "https://www.saikr.com"
-      enabled: false
-      keywords: ["报名", "通知", "竞赛"]
-      wait_selector: ".competition-list"
+      wait_selector: "a"
+      selector: "a"
       max_items: 8
 
   # ── L2: 微信公众号（通过 RSSHub 桥接）───────────────────────────
@@ -360,7 +362,7 @@ prompts:
        - 📋 校内通知
        - 💡 其他值得关注
     2. 每条信息给出：
-       - 一句话摘要（≤50字，信息密度高）
+       - 一句话摘要（≤100字，信息密度高）
        - 关键数字/日期（截止时间、名额、金额等）
        - 原文链接
     3. 最后给出"📌 今日优先行动项"（最多3条，按紧急程度排序）
