@@ -1,59 +1,355 @@
-# ZJU Info Agent — 主配置文件
-# 详细文档见 docs/configuration.md
+# ========================================================================
+#  ZJU Info Agent — 用户配置文件（唯一配置入口）
+# ========================================================================
+#  所有可配置项都在这个文件里。修改后保存，下次运行即可生效。
+#  密钥可以写明文，也可以用 ${ENV_VAR} 从 config/.env 注入。
+# ========================================================================
 
-# ── LLM 配置 ──────────────────────────────────────
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  1. 基本信息                                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+user:
+  name: "用户"                                      # 你的称呼，日报里会用
+  identity: "浙江大学计算机科学与技术学院 在读本科生"  # 身份描述，注入 LLM 上下文
+  interests:                                         # 你的关注方向（影响 LLM 筛选优先级）
+    - "AI/ML 前沿研究（Agent、强化学习、多模态、大语言模型）"
+    - "高含金量科研竞赛（挑战杯、互联网+、ACM/ICPC、数学建模）"
+    - "出国交流 / 联培机会（优先美国、欧洲顶校）"
+    - "有竞争力的实习和校招岗位（算法、研究、工程方向）"
+    - "实验室科研机会与导师招生信息"
+    - "奖学金、评优、保研相关政策"
+
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  2. 大模型配置                                                         ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 llm:
-  provider: deepseek                   # deepseek / openai / anthropic
-  model: deepseek-chat                 # DeepSeek-V3
-  api_key: ${DEEPSEEK_API_KEY}
-  base_url: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
-  max_tokens: 2000
-  temperature: 0.3
+  provider: "deepseek"                              # deepseek / openai / anthropic
+  model: "deepseek-chat"                            # 模型名称
+  api_key: "${DEEPSEEK_API_KEY}"                    # API Key；也可直接写明文
+  base_url: "https://api.deepseek.com"              # API 地址
+  max_tokens: 2000                                  # 单次调用最大输出 token
+  temperature: 0.3                                  # 创造性控制 (0=保守, 1=自由)
 
-# ── 定时调度 ──────────────────────────────────────
-schedule:
-  enabled: false                       # Phase 3 之前关掉定时
-  daily_report_times:                  # 日报生成时间（可多个）
-    - "08:00"
-    - "20:00"
-  collection_interval_minutes: 120     # 信息采集间隔
-  timezone: "Asia/Shanghai"
 
-# ── 认证配置 ──────────────────────────────────────
-auth:
-  zjuam:
-    username: ${ZJU_USERNAME}
-    password: ${ZJU_PASSWORD}
-    session_cache: "config/cookies/zjuam.pkl"
-  cc98:
-    token: ${CC98_TOKEN}
-  rsshub:
-    base_url: "http://localhost:1200"
-
-# ── 输出配置 ──────────────────────────────────────
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  3. 输出配置                                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 output:
-  report_dir: "info/reports"
-  raw_dir: "info/raw"
-  processed_dir: "info/processed"
-  formats: ["markdown"]
+  report_dir: "E:/MyReports"                        # 日报存放目录，不存在则自动创建
+  report_name_format: "{date}-{seq:02d}"             # 文件名格式: 2026-6-10-01.md
+  save_raw: true                                    # 是否保存原始采集数据（调试用）
+  save_processed: true                              # 是否保存 LLM 处理后的结构化 JSON
 
-# ── 推送配置（按需启用）───────────────────────────
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  4. 定时运行                                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+schedule:
+  enabled: false                                    # 是否启用定时（开发阶段建议 false）
+  times: ["08:00"]                                  # 每天几点运行（北京时间）
+  timezone: "Asia/Shanghai"
+  collection_interval_minutes: 120                  # 采集间隔（定时以外如需独立刷新）
+
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  5. 采集行为                                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+crawl:
+  max_concurrent: 5                                 # 最大同时抓取数
+  request_delay_seconds: [1, 3]                     # 请求间隔随机范围（秒）
+  timeout_seconds: 30                               # 单次请求超时
+  max_retries: 3                                    # 失败重试次数
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  6. 通知推送（按需启用）                                               ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 notify:
   feishu:
     enabled: false
-    webhook_url: ${FEISHU_WEBHOOK}
+    webhook_url: "${FEISHU_WEBHOOK}"
   email:
     enabled: false
     smtp_host: "smtp.zju.edu.cn"
     smtp_port: 465
-    from: ${EMAIL_FROM}
-    to: ${EMAIL_TO}
-    password: ${EMAIL_PASSWORD}
+    from_addr: "${EMAIL_FROM}"
+    to_addr: "${EMAIL_TO}"
+    password: "${EMAIL_PASSWORD}"
 
-# ── 采集行为控制 ──────────────────────────────────
-crawl:
-  max_concurrent: 5
-  request_delay_seconds: [1, 3]
-  timeout_seconds: 30
-  max_retries: 3
-  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  7. 认证信息                                                           ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+auth:
+  zjuam:
+    username: "${ZJU_USERNAME}"                     # 学号
+    password: "${ZJU_PASSWORD}"                     # 密码
+  cc98:
+    token: "${CC98_TOKEN}"                          # 从浏览器 DevTools 提取的 Bearer Token
+
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  8. 信息源（分门别类，可自由增减）                                     ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+#  每个源的字段说明：
+#    name     — 显示名称
+#    url      — 网页/API/RSS 地址
+#    enabled  — true/false  是否启用
+#    keywords — 筛选关键词列表，留空 [] 或注释掉 = 当天的全部信息
+#    max_items — 每次最多采集条数
+#    selector — (仅 HTML 源) CSS 选择器
+#    monitor  — (可选) 对无 RSS 的页面做变更检测
+# ========================================================================
+
+sources:
+
+  # ── L0: 完全公开 ─────────────────────────────────────────────────
+  # 无需登录，直接抓取。优先使用 RSS/API，无则降级为 HTML 解析。
+
+  l0_rss:
+    - name: "arXiv CS.AI"
+      url: "https://arxiv.org/rss/cs.AI"
+      enabled: true
+      keywords: ["agent", "LLM", "reinforcement learning", "RAG", "multi-agent"]
+      max_items: 15
+
+    - name: "arXiv CS.LG"
+      url: "https://arxiv.org/rss/cs.LG"
+      enabled: true
+      keywords: ["deep learning", "transformer", "optimization", "generative model"]
+      max_items: 10
+
+    - name: "arXiv CS.CV"
+      url: "https://arxiv.org/rss/cs.CV"
+      enabled: false
+      keywords: ["multimodal", "image generation", "vision transformer"]
+      max_items: 10
+
+    - name: "arXiv CS.CL"
+      url: "https://arxiv.org/rss/cs.CL"
+      enabled: false
+      keywords: ["language model", "NLP", "text generation"]
+      max_items: 10
+
+  l0_api:
+    - name: "Semantic Scholar AI"
+      url: "https://api.semanticscholar.org/graph/v1/paper/search?query=artificial+intelligence&limit=20"
+      enabled: false
+      keywords: []
+      max_items: 20
+
+    - name: "CTFtime Events"
+      url: "https://ctftime.org/api/v1/events/?limit=10"
+      enabled: false
+      keywords: []
+      max_items: 10
+
+  l0_html:
+    - name: "浙江大学官网新闻"
+      url: "https://www.zju.edu.cn/news/"
+      enabled: true
+      keywords: ["竞赛", "奖学金", "出国", "交流", "申请", "创新", "科研"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "挑战杯官网"
+      url: "https://www.tiaozhanbei.net"
+      enabled: false
+      keywords: ["通知", "报名", "结果", "获奖", "截止"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "互联网+ 创新创业大赛"
+      url: "https://cy.ncss.cn"
+      enabled: false
+      keywords: ["报名", "通知", "决赛", "获奖"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "全国大学生数学建模竞赛"
+      url: "https://www.mcm.edu.cn"
+      enabled: false
+      keywords: ["报名", "赛题", "获奖", "通知"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "CSC 国家留学基金委"
+      url: "https://www.csc.edu.cn/chuguo"
+      enabled: false
+      keywords: ["申请", "名额", "截止", "公告", "选派"]
+      selector: ".list_content li"
+      max_items: 10
+
+    - name: "浙江大学国际合作处"
+      url: "https://ico.zju.edu.cn"
+      enabled: false
+      keywords: ["交流", "出国", "交换", "奖学金", "项目"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "浙江大学研究生院公告"
+      url: "https://grs.zju.edu.cn/redir.php?catalog_id=10"
+      enabled: false
+      keywords: ["招生", "答辩", "奖学金", "评优"]
+      selector: ".list li"
+      max_items: 10
+
+    - name: "浙江大学就业指导中心"
+      url: "https://career.zju.edu.cn"
+      enabled: false
+      keywords: ["招聘", "宣讲会", "实习", "校招"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "蓝桥杯大赛"
+      url: "https://www.lanqiao.cn"
+      enabled: false
+      keywords: ["报名", "省赛", "国赛", "通知"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "ICPC 国际大学生程序设计竞赛"
+      url: "https://icpc.global"
+      enabled: false
+      keywords: ["regional", "final", "registration"]
+      selector: ".news-list li"
+      max_items: 10
+
+    - name: "CCPC 中国大学生程序设计竞赛"
+      url: "https://ccpc.io"
+      enabled: false
+      keywords: ["报名", "通知", "比赛", "结果"]
+      selector: ".news-item"
+      max_items: 10
+
+    # 教授/实验室主页（变更检测模式）
+    - name: "某教授实验室主页"
+      url: "https://person.zju.edu.cn/example"
+      enabled: false
+      keywords: []
+      monitor: true                                 # 变更检测：内容变了才触发
+      max_items: 5
+
+  # ── L1: 动态渲染页面（需 Playwright 打开浏览器）──────────────────
+  l1_playwright:
+    - name: "牛客网竞赛"
+      url: "https://ac.nowcoder.com/acm/contest/vip-index"
+      enabled: false
+      keywords: ["报名", "进行中", "即将开始"]
+      wait_selector: ".contest-list"
+      max_items: 8
+
+    - name: "赛氪竞赛"
+      url: "https://www.saikr.com"
+      enabled: false
+      keywords: ["报名", "通知", "竞赛"]
+      wait_selector: ".competition-list"
+      max_items: 8
+
+  # ── L2: 微信公众号（通过 RSSHub 桥接）───────────────────────────
+  l2_wechat:
+    - name: "浙江大学"
+      account_name: "浙江大学官方公众号"
+      enabled: false
+      keywords: ["通知", "公告", "竞赛", "奖学金", "讲座"]
+      max_items: 10
+
+    - name: "浙大研究生院"
+      account_name: "浙大研究生院公众号"
+      enabled: false
+      keywords: ["招生", "答辩", "评优", "奖学金"]
+      max_items: 10
+
+    - name: "浙大计算机学院"
+      account_name: "浙大计算机学院公众号"
+      enabled: false
+      keywords: ["讲座", "科研", "竞赛", "活动", "招生"]
+      max_items: 10
+
+    - name: "挑战杯"
+      account_name: "挑战杯官方公众号"
+      enabled: false
+      keywords: ["通知", "报名", "获奖", "展示"]
+      max_items: 10
+
+  # ── L3: 第三方平台 API ──────────────────────────────────────────
+  l3_api:
+    - name: "B站 浙江大学官方"
+      url: "https://api.bilibili.com/x/space/arc/search?mid=385924"
+      enabled: false
+      keywords: ["讲座", "活动", "竞赛", "招生"]
+      max_items: 5
+
+  # ── L4: ZJU 统一认证（需学号密码登录）───────────────────────────
+  l4_zjuam:
+    - name: "学在浙大 课程通知"
+      url: "https://courses.zju.edu.cn"
+      enabled: false
+      keywords: ["作业", "考试", "截止", "通知", "公告"]
+      max_items: 20
+
+    - name: "教务系统公告"
+      url: "https://jwbinfosys.zju.edu.cn/bulletin.aspx"
+      enabled: false
+      keywords: ["选课", "考试", "成绩", "补考", "通知"]
+      selector: "#bulletin-list tr"
+      max_items: 10
+
+    - name: "研究生院内网通知"
+      url: "https://grs.zju.edu.cn"
+      enabled: false
+      keywords: ["答辩", "奖学金", "评优", "通知"]
+      max_items: 10
+
+  # ── L5: 校园网专属（CC98 等）────────────────────────────────────
+  l5_internal:
+    - name: "CC98 热门帖子"
+      url: "https://www.cc98.org"
+      enabled: false
+      keywords: ["竞赛", "奖学金", "出国", "实习", "保研", "offer"]
+      max_items: 30
+
+    - name: "CC98 计算机学院版"
+      url: "https://www.cc98.org/board/5"
+      enabled: false
+      keywords: ["讲座", "科研", "实验室", "导师", "招生"]
+      max_items: 20
+
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║  9. 系统提示词（LLM 筛选 & 日报生成）                                  ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+prompts:
+
+  # LLM 筛选信息时的系统提示词
+  filter: |
+    你是一个专业的信息筛选助手。请从以下原始内容中：
+    1. 过滤掉与用户关注方向无关的内容
+    2. 过滤掉重复或已明显过时的信息
+    3. 标注每条信息的重要程度（高/中/低）
+       - 高：有明确截止日期、需要本人操作的、与个人战略高度相关的
+       - 中：与关注方向相关但无需立即行动的
+       - 低：仅供参考的背景信息
+    4. 注意截止日期，临近截止（7天内）的信息自动升为高重要度
+    5. 结合用户的个人战略，判断哪些信息有实际行动价值
+
+  # LLM 生成日报时的系统提示词
+  summary: |
+    基于筛选后的信息，生成今日信息日报，要求：
+    1. 按类别分组：
+       - 🧪 科研动态
+       - 🏆 竞赛活动
+       - ✈️ 出国交流
+       - 💼 就业实习
+       - 📋 校内通知
+       - 💡 其他值得关注
+    2. 每条信息给出：
+       - 一句话摘要（≤50字，信息密度高）
+       - 关键数字/日期（截止时间、名额、金额等）
+       - 原文链接
+    3. 最后给出"📌 今日优先行动项"（最多3条，按紧急程度排序）
+    4. 如果今日没有特别相关的信息，诚实地说"今日无重要更新"
+    5. 语言简洁，信息密度高
