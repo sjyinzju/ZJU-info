@@ -11,9 +11,9 @@
 # ╚══════════════════════════════════════════════════════════════════════════╝
 user:
   name: "用户"                                      # 你的称呼，日报里会用
-  identity: "浙江大学计算机科学与技术学院 在读本科生"  # 身份描述，注入 LLM 上下文
+  identity: "浙江大学 在读本科生"  # 身份描述，注入 LLM 上下文
   interests:                                         # 你的关注方向（影响 LLM 筛选优先级）
-    - "AI/ML 前沿研究（Agent、强化学习、多模态、大语言模型）"
+    - "AI/ML 前沿研究（Agent、大语言模型）"
     - "高含金量科研竞赛（挑战杯、互联网+、ACM/ICPC、数学建模）"
     - "出国交流 / 联培机会（优先美国、欧洲顶校）"
     - "有竞争力的实习和校招岗位（算法、研究、工程方向）"
@@ -27,7 +27,11 @@ user:
 llm:
   provider: "deepseek"                              # deepseek / openai / anthropic
   model: "deepseek-chat"                            # 模型名称
-  api_key: "${DEEPSEEK_API_KEY}"                    # API Key；也可直接写明文
+  # api_key 的两种填写方式（.env 优先）:
+  #   方式A: api_key: "${DEEPSEEK_API_KEY}"         → 从 config/.env 读取（推荐，不会误提交）
+  #   方式B: api_key: "sk-your-real-key-here"       → 直接写在这里（方便但不安全）
+  #   如果 .env 没填而这里用 ${...}，启动时会报错提示你
+  api_key: "${DEEPSEEK_API_KEY}"
   base_url: "https://api.deepseek.com"              # API 地址
   max_tokens: 2000                                  # 单次调用最大输出 token
   temperature: 0.3                                  # 创造性控制 (0=保守, 1=自由)
@@ -184,21 +188,21 @@ sources:
       max_items: 10
 
     - name: "浙江大学国际合作处"
-      url: "https://ico.zju.edu.cn"
+      url: "https://www.ir.zju.edu.cn"                  # 注意：旧域名 ico.zju.edu.cn 已迁移
       enabled: false
       keywords: ["交流", "出国", "交换", "奖学金", "项目"]
       selector: ".news-list li"
       max_items: 10
 
     - name: "浙江大学研究生院公告"
-      url: "https://grs.zju.edu.cn/redir.php?catalog_id=10"
+      url: "https://grs.zju.edu.cn"                 # 需在浏览器中登录后确认具体公告页 URL
       enabled: false
       keywords: ["招生", "答辩", "奖学金", "评优"]
       selector: ".list li"
       max_items: 10
 
     - name: "浙江大学就业指导中心"
-      url: "https://career.zju.edu.cn"
+      url: "https://www.career.zju.edu.cn"
       enabled: false
       keywords: ["招聘", "宣讲会", "实习", "校招"]
       selector: ".news-list li"
@@ -284,6 +288,9 @@ sources:
       max_items: 5
 
   # ── L4: ZJU 统一认证（需学号密码登录）───────────────────────────
+  # ⚠️ 这些 URL 需要你在浏览器中登录后，从地址栏复制真实 URL 填入。
+  #    方法：Chrome 登录 courses.zju.edu.cn → 进入目标页面 → 复制完整 URL → 粘贴到这里
+  #    如果 URL 不对导致打不开，先禁用该源，Phase 5 会逐个验证。
   l4_zjuam:
     - name: "学在浙大 课程通知"
       url: "https://courses.zju.edu.cn"
@@ -292,9 +299,9 @@ sources:
       max_items: 20
 
     - name: "教务系统公告"
-      url: "https://jwbinfosys.zju.edu.cn/bulletin.aspx"
+      url: "https://zdbk.zju.edu.cn/"
       enabled: false
-      keywords: ["选课", "考试", "成绩", "补考", "通知"]
+      keywords: ["选课", "考试", "成绩", "补考", "通知","交流"]
       selector: "#bulletin-list tr"
       max_items: 10
 
@@ -302,6 +309,12 @@ sources:
       url: "https://grs.zju.edu.cn"
       enabled: false
       keywords: ["答辩", "奖学金", "评优", "通知"]
+      max_items: 10
+
+    - name: "管理学院内网"
+      url: "https://sommis.zju.edu.cn/"
+      enabled: false
+      keywords: ["社会实践","讲座","通知","招募"]
       max_items: 10
 
   # ── L5: 校园网专属（CC98 等）────────────────────────────────────

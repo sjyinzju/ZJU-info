@@ -38,13 +38,24 @@ except ImportError:
 # ══════════════════════════════════════════════════════════════
 
 def _resolve_env(value: str) -> str:
-    """递归解析字符串中的 ${VAR} 和 ${VAR:-default} 占位符"""
+    """递归解析字符串中的 ${VAR} 和 ${VAR:-default} 占位符
+
+    优先级: .env 环境变量 > ${VAR:-fallback} 中的 fallback
+    如果都没有，返回空字符串（后续校验会发现并报错）
+    """
     pattern = re.compile(r'\$\{(\w+)(?::-([^}]*))?\}')
 
     def _replace(match):
         var_name = match.group(1)
         default = match.group(2)
-        return os.environ.get(var_name, default if default is not None else "")
+        env_val = os.environ.get(var_name, "")
+        if env_val:
+            return env_val
+        if default is not None:
+            return default
+        # 既无环境变量也无默认值 → 返回空并记入待告警列表
+        _unresolved_vars.add(var_name)
+        return ""
 
     prev = None
     result = value
@@ -52,6 +63,10 @@ def _resolve_env(value: str) -> str:
         prev = result
         result = pattern.sub(_replace, result)
     return result
+
+
+# 全局集合：记录所有未能从环境变量解析的 ${VAR}
+_unresolved_vars: set = set()
 
 
 def _resolve_dict(obj: Any) -> Any:
@@ -75,11 +90,48 @@ def load_config(config_path: Optional[Path] = None) -> dict:
     if not config_path.exists():
         sys.exit(f"[ERROR] 配置文件不存在: {config_path}")
 
+    # 清空上次的未解析记录
+    _unresolved_vars.clear()
+
     with open(config_path, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f)
 
     config = _resolve_dict(raw)
+    _validate_config(config)
     return config
+
+
+def _validate_config(config: dict):
+    """检查配置中是否有未解析的 ${VAR} 或关键字段为空"""
+    # 检查未解析的环境变量
+    if _unresolved_vars:
+        print()
+        print("=" * 62)
+        print("  [WARNING] 以下 ${VAR} 占位符未能从环境变量解析：")
+        for var in sorted(_unresolved_vars):
+            print(f"    - {var}")
+        print()
+        print("  解决方法（任选其一）：")
+        print(f"    1. 在 config/.env 中填入对应值（推荐，不会被提交到 Git）")
+        print(f"    2. 在 config.yaml 中把 ${{VAR}} 替换为真实值")
+        print("=" * 62)
+
+    # 检查 LLM API key 是否为空
+    llm = config.get("llm", {})
+    api_key = llm.get("api_key", "")
+    if not api_key or api_key.startswith("sk-placeholder"):
+        print()
+        print("=" * 62)
+        print("  [ERROR] LLM API Key 未配置！")
+        print()
+        provider = llm.get("provider", "deepseek")
+        if provider == "deepseek":
+            print("  获取 DeepSeek API Key:")
+            print("    1. 访问 https://platform.deepseek.com")
+            print("    2. 注册/登录 → API Keys → 创建新 Key")
+            print("    3. 复制 Key 到 config/.env 的 DEEPSEEK_API_KEY= 后面")
+        print("=" * 62)
+        sys.exit(1)
 
 
 # ══════════════════════════════════════════════════════════════
