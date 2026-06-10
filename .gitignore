@@ -1,0 +1,41 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment & secrets
+config/.env
+*.env
+!config/.env.template
+
+# Session cache
+config/cookies/
+
+# Generated output
+info/
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Design docs
+/design

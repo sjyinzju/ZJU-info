@@ -1,0 +1,14 @@
+[project]
+name = "zju-info-agent"
+version = "0.1.0"
+description = "浙大校园信息自动采集 Agent — 定时抓取 → LLM 筛选 → 日报生成"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "black>=24.0",
+    "ruff>=0.5",
+]

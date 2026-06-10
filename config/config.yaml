@@ -1,0 +1,59 @@
+# ZJU Info Agent — 主配置文件
+# 详细文档见 docs/configuration.md
+
+# ── LLM 配置 ──────────────────────────────────────
+llm:
+  provider: deepseek                   # deepseek / openai / anthropic
+  model: deepseek-chat                 # DeepSeek-V3
+  api_key: ${DEEPSEEK_API_KEY}
+  base_url: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+  max_tokens: 2000
+  temperature: 0.3
+
+# ── 定时调度 ──────────────────────────────────────
+schedule:
+  enabled: false                       # Phase 3 之前关掉定时
+  daily_report_times:                  # 日报生成时间（可多个）
+    - "08:00"
+    - "20:00"
+  collection_interval_minutes: 120     # 信息采集间隔
+  timezone: "Asia/Shanghai"
+
+# ── 认证配置 ──────────────────────────────────────
+auth:
+  zjuam:
+    username: ${ZJU_USERNAME}
+    password: ${ZJU_PASSWORD}
+    session_cache: "config/cookies/zjuam.pkl"
+  cc98:
+    token: ${CC98_TOKEN}
+  rsshub:
+    base_url: "http://localhost:1200"
+
+# ── 输出配置 ──────────────────────────────────────
+output:
+  report_dir: "info/reports"
+  raw_dir: "info/raw"
+  processed_dir: "info/processed"
+  formats: ["markdown"]
+
+# ── 推送配置（按需启用）───────────────────────────
+notify:
+  feishu:
+    enabled: false
+    webhook_url: ${FEISHU_WEBHOOK}
+  email:
+    enabled: false
+    smtp_host: "smtp.zju.edu.cn"
+    smtp_port: 465
+    from: ${EMAIL_FROM}
+    to: ${EMAIL_TO}
+    password: ${EMAIL_PASSWORD}
+
+# ── 采集行为控制 ──────────────────────────────────
+crawl:
+  max_concurrent: 5
+  request_delay_seconds: [1, 3]
+  timeout_seconds: 30
+  max_retries: 3
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
