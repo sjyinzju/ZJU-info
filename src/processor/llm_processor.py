@@ -76,8 +76,10 @@ def build_user_message(items: List[RawItem]) -> str:
         lines.append(f"### [{i}] {item.title}")
         lines.append(f"来源: {item.source_name} | 日期: {pub_str}")
         lines.append(f"链接: {item.url}")
-        # 截断过长内容（DeepSeek 上下文有限）
-        content = item.raw_content[:800] if item.raw_content else ""
+        # 严格控制每条内容长度，避免超出 LLM 上下文窗口
+        content = (item.raw_content or "").strip()[:400]
+        if len(item.raw_content or "") > 400:
+            content += "…"
         lines.append(f"内容: {content}")
         lines.append("")
 
@@ -175,13 +177,15 @@ def run_llm_pipeline(
             temperature=config.llm.temperature,
         )
     except Exception as e:
+        # 只记录日志，不把原始异常信息写入日报 editorial
+        import traceback
         logger.error(f"[LLM] 调用失败（已重试3次）: {e}")
-        # 降级：返回不含 LLM 摘要的空日报
+        logger.debug(traceback.format_exc())
         return DailyReport(
             date=datetime.now().strftime("%Y-%m-%d"),
             generated_at=datetime.now().isoformat(),
             items=[],
-            editorial=f"LLM 处理失败: {e}",
+            editorial="LLM 处理暂时不可用，请稍后重试。原始数据已保存。",
             top_actions=[],
             stats=stats,
         )

@@ -33,7 +33,7 @@ llm:
   #   如果 .env 没填而这里用 ${...}，启动时会报错提示你
   api_key: "${DEEPSEEK_API_KEY}"
   base_url: "https://api.deepseek.com"              # API 地址
-  max_tokens: 2000                                  # 单次调用最大输出 token
+  max_tokens: 8000                                  # 单次调用最大输出 token（需足够大以容纳筛选结果）
   temperature: 0.3                                  # 创造性控制 (0=保守, 1=自由)
 
 
