@@ -60,6 +60,20 @@ def build_system_prompt(config: AppConfig) -> str:
     if prompts.filter:
         parts.append(f"## 筛选规则\n{prompts.filter}")
 
+    # CC98 论坛内容特殊提示（与其他来源共用 system prompt 时不冲突）
+    parts.append(
+        "## 关于 CC98 论坛来源\n"
+        "CC98 是浙大校内论坛，信息来自学生真实分享，价值极高。\n"
+        "筛选 CC98 帖子时，请放宽标准：即使标题未精确命中关键词，只要内容涉及以下主题就应保留：\n"
+        "- 课程推荐/避坑、教师评价、给分情况\n"
+        "- 实习/校招内推、面试经验、offer 比较\n"
+        "- 实验室招募、导师评价、科研心得\n"
+        "- 历年卷/复习资料分享、考试经验\n"
+        "- 竞赛组队、项目招募、活动报名\n"
+        "- 转专业/辅修经验、出国交流心得\n"
+        "- 投资理财、编程技术等实用分享"
+    )
+
     # 日报要求
     if prompts.summary:
         parts.append(f"## 日报格式要求\n{prompts.summary}")

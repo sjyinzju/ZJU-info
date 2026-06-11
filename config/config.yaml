@@ -92,7 +92,8 @@ auth:
     username: "${ZJU_USERNAME}"                     # 学号
     password: "${ZJU_PASSWORD}"                     # 密码
   cc98:
-    token: "${CC98_TOKEN}"                          # 从浏览器 DevTools 提取的 Bearer Token
+    token: "${CC98_TOKEN}"                          # 校内 CC98 Token
+    token_out_of_campus: "${CC98_TOKEN_OUT_OF_CAMPUS_NETWORK}"  # 校外 VPN 环境 Token
 
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
@@ -411,7 +412,8 @@ sources:
     - name: "教务系统 通知公告"
       url: "https://zdbk.zju.edu.cn/"
       enabled: true
-      keywords: ["选课", "考试", "成绩", "补考", "交流", "辅修", "四六级", "保研", "考研", "学期", "注册", "奖学金"]
+      keywords: ["选课", "考试", "成绩", "补考", "交流", "辅修", "四六级", "保研", "考研", "学期", "注册", "奖学金",
+                 "美国", "英国", "欧洲", "暑期", "学期", "学位", "科研", "数据", "计算机", "AI", "工程"]
       max_items: 30
 
     - name: "研究生院内网通知"
@@ -429,37 +431,37 @@ sources:
   # ══════════════════════════════════════════════════════════════
   #  L5 — 校园网专属（CC98 等，Phase 5）                           ═
   # ══════════════════════════════════════════════════════════════
+  #  L5 — 校园网专属（CC98 Bearer Token + 校园网/VPN）           ═
+  # ══════════════════════════════════════════════════════════════
   l5_internal:
-    - name: "CC98 热门帖子"
-      url: "https://www.cc98.org"
-      enabled: false
-      keywords: ["竞赛", "奖学金", "出国", "实习", "保研", "offer"]
-      max_items: 30
-
-    - name: "CC98 计算机学院版"
-      url: "https://www.cc98.org/board/5"
-      enabled: false
-      keywords: ["讲座", "科研", "实验室", "导师", "招生"]
-      max_items: 20
-
-    # CC98 REST API（需 Bearer Token + 校园网）── 设计文档 ✅ 确认
-    - name: "CC98 API — 热门帖"
-      url: "https://www.cc98.org/api/topic/hot"
-      enabled: false
-      keywords: []
-      max_items: 30
-
-    - name: "CC98 API — 版面帖子"
-      url: "https://www.cc98.org/api/board/{board_id}/topic"  # {board_id} 替换为目标版面 ID
-      enabled: false
-      keywords: []
-      max_items: 20
-
-    - name: "CC98 API — 关键词搜索"
-      url: "https://www.cc98.org/api/topic/search?keyword={kw}"  # {kw} 替换为搜索词
-      enabled: false
-      keywords: []
-      max_items: 20
+    # CC98 综合采集（关键词搜索 + 11 个版面监控）
+    # 需在 .env 中配置 CC98_TOKEN，需要校园网或 ZJU VPN 环境
+    - name: "CC98 综合采集"
+      url: "https://www.cc98.org/api"
+      enabled: true
+      keywords:
+        # 关键词搜索匹配
+        - "课程"
+        - "科研"
+        - "实验室"
+        - "导师"
+        - "经验"
+        - "历年卷"
+        - "复习"
+        - "转专业"
+        - "辅修"
+        - "内推"
+        - "实习"
+        - "组队"
+        - "竞赛"
+        - "招募"
+        - "编程"
+        - "投资"
+        - "理财"
+        - "出国"
+        - "保研"
+        - "考研"
+      max_items: 50
 
 
 # ╔══════════════════════════════════════════════════════════════════════════╗

@@ -873,6 +873,17 @@ class L4ZjuAmCollector(BaseCollector):
 
             urgency_tag = " [⚠️紧急]" if urgent else ""
 
+            # ── 关键词过滤 ──
+            keywords = self.source.keywords
+            if keywords:
+                # 构建可搜索文本（标题 + 所有可筛选字段）
+                searchable = " ".join([
+                    title, school, country, region, department,
+                    target, prog_type, semester,
+                ]).lower()
+                if not any(kw.lower() in searchable for kw in keywords):
+                    continue  # 不匹配任何关键词，跳过
+
             items.append(RawItem(
                 source_name="教务系统 - 对外交流",
                 source_level="L4",
@@ -887,6 +898,8 @@ class L4ZjuAmCollector(BaseCollector):
             ))
 
         # 统计
+        total_parsed = len(programs)
+        filtered_out = total_parsed - len(items)
         urgent_count = sum(
             1 for i in items
             if "今天截止" in (i.raw_content or "")
@@ -894,8 +907,10 @@ class L4ZjuAmCollector(BaseCollector):
                 and any(f"距截止 {d} 天" in (i.raw_content or "")
                        for d in range(0, 8)))
         )
+        kw_info = f"（关键词过滤 {filtered_out} 条）" if filtered_out else ""
         logger.info(
-            f"对外交流: {len(items)} 个项目（近期截止 {urgent_count} 个）"
+            f"对外交流: {len(items)} 个项目{kw_info}"
+            f"（近期截止 {urgent_count} 个）"
         )
         return items
 

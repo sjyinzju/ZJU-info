@@ -13,6 +13,7 @@ from src.collectors.l0_rss import L0RssCollector
 from src.collectors.l0_html import L0HtmlCollector
 from src.collectors.l1_playwright import L1PlaywrightCollector
 from src.collectors.l4_zjuam import L4ZjuAmCollector
+from src.collectors.l5_cc98 import L5CC98Collector
 from src.processor.deduplicator import deduplicate
 from src.processor.html_cleaner import clean_items as clean_html_items
 from src.processor.keyword_filter import pre_filter, merge_keywords
@@ -26,7 +27,7 @@ COLLECTOR_MAP = {
     "l0_html": L0HtmlCollector,
     "l1_playwright": L1PlaywrightCollector,
     "l4_zjuam": L4ZjuAmCollector,
-    # l0_api, l2_wechat, l3_api, l5_internal → 后续 Phase
+    "l5_internal": L5CC98Collector,
 }
 
 
@@ -59,9 +60,15 @@ async def run_pipeline(config: AppConfig) -> DailyReport:
             logger.warning(f"[流水线] 跳过不支持的类型: {cat} ({src.name})")
             stats.sources_failed += 1
             continue
-        # L4 采集器需要 auth 参数
+        # 特殊采集器需要额外参数
         if cat == "l4_zjuam":
             collector = collector_cls(src, crawl_cfg, auth_config=auth_cfg)
+        elif cat == "l5_internal":
+            collector = collector_cls(
+                src, crawl_cfg,
+                cc98_token=config.auth.cc98.token,
+                cc98_token_backup=config.auth.cc98.token_out_of_campus,
+            )
         else:
             collector = collector_cls(src, crawl_cfg)
         tasks.append(_collect_with_error_handling(collector, src.name))
