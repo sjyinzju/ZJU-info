@@ -46,10 +46,10 @@ ZDBK_EXAMS_URL = (
     f"{ZDBK_BASE}/xskscx/kscx_cxXsgrksIndex.html"
     "?doType=query&queryModel.showCount=5000"
 )
-# 对外交流申请
+# 对外交流 — cxType=jlxm 查询公共项目列表库（非个人申请）
 ZDBK_EXCHANGE_URL = (
     f"{ZDBK_BASE}/jlsgl/xjlssq_cxJlssqIndex.html"
-    "?gnmkdm=N10653005&layout=default"
+    "?doType=query&cxType=jlxm&gnmkdm=N10653005"
 )
 
 GRADES_CACHE_DIR = Path("config/cookies")
@@ -709,26 +709,49 @@ class L4ZjuAmCollector(BaseCollector):
 
     async def _collect_zdbk_exchange(self) -> List[RawItem]:
         """
-        采集对外交流申请页面。
+        采集教务系统「交流生项目列表库」（cxType=jlxm）。
 
-        查询是否有进行中的交流项目申请、可报名项目等。
-        当前无数据时返回空（季节性问题），有数据时按名额/报名状态报告。
+        POST 含 cxType=jlxm 参数 → 返回公共项目库（289 条），
+        非个人申请记录。按截止日期降序排列。
         """
-        logger.info("采集对外交流信息...")
+        logger.info("采集对外交流项目列表...")
         timeout = max(self.crawl_config.get("timeout_seconds", 30) * 2, 60)
         username = self.auth_config.get("username", "")
 
-        exchange_url = f"{ZDBK_EXCHANGE_URL}&su={username}&doType=query&queryModel.showCount=50"
+        # 严格按浏览器 cURL 构建参数
+        url = f"{ZDBK_EXCHANGE_URL}&su={username}"
+        payload = {
+            "xn": "",
+            "xq": "",
+            "jllbmc": "",
+            "_search": "false",
+            "nd": str(int(__import__("time").time() * 1000)),
+            "queryModel.showCount": "15",
+            "queryModel.currentPage": "1",
+            "queryModel.sortName": "jzrq",
+            "queryModel.sortOrder": "desc",
+            "time": "1",
+        }
+        headers = {
+            **ZDBK_HEADERS,
+            "Origin": "https://zdbk.zju.edu.cn",
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "Referer": (
+                "https://zdbk.zju.edu.cn/jwglxt/jlsgl/"
+                "xjlssq_cxJlssqIndex.html?gnmkdm=N10653005"
+                f"&layout=default&su={username}"
+            ),
+        }
 
         try:
             resp = self._zdbk_session.post(
-                exchange_url, headers=ZDBK_HEADERS, timeout=timeout,
+                url, data=payload, headers=headers, timeout=timeout,
             )
             if resp.status_code != 200:
                 logger.error(f"对外交流 API HTTP {resp.status_code}")
                 return []
             data = resp.json()
-            exchange_list = data.get("items", [])
+            programs = data.get("items", [])
         except requests.exceptions.Timeout:
             logger.warning("对外交流 API 超时")
             return []
@@ -736,56 +759,144 @@ class L4ZjuAmCollector(BaseCollector):
             logger.error(f"对外交流 API 网络错误: {e}")
             return []
         except ValueError:
-            logger.warning("对外交流 API 返回非 JSON（可能没有申请记录）")
+            logger.warning("对外交流 API 返回非 JSON")
             return []
 
-        if not exchange_list:
-            logger.info("对外交流：当前无申请记录或可报名项目")
+        if not programs:
+            logger.info("对外交流：无项目数据")
             return []
 
-        # 有数据：解析交流项目信息
-        logger.info(f"对外交流: {len(exchange_list)} 条记录")
+        total = data.get("totalCount", len(programs))
+        logger.info(f"对外交流: {len(programs)} 条（共 {total} 个项目）")
+
         now_cn = datetime.now(CN_TZ)
         items = []
 
-        for ex in exchange_list[:20]:
-            # 尝试解析常见字段（字段名可能因系统版本而异）
-            prog_name = (
-                ex.get("jlmc", "") or ex.get("xmmc", "") or
-                ex.get("jhlxmc", "") or ""
-            )
-            school = ex.get("xxmc", "") or ex.get("dwmc", "") or ""
-            country = ex.get("gb", "") or ex.get("gj", "") or ""
-            status = ex.get("zt", "") or ex.get("shzt", "") or ""
-            quota = ex.get("rs", "") or ex.get("zs", "") or ""
-            apply_start = ex.get("sqksrq", "") or ex.get("kssj", "") or ""
-            apply_end = ex.get("sqjsrq", "") or ex.get("jssj", "") or ""
-
-            if not prog_name:
+        for p in programs:
+            title = p.get("jllbmc", "")
+            if not title:
                 continue
 
+            department = p.get("bmmc", "")          # 发布部门
+            country = p.get("jlgjmc", "")           # 国家
+            region = p.get("jldqmc", "")            # 地区
+            school = p.get("jlxx", "")              # 交流学校
+            link = p.get("jlxxxx", "")              # 详情链接
+            target = p.get("jlstj", "")             # 面向对象
+            prog_type = p.get("gjhlxmc", "")        # 交流类型（学位类/其他类）
+            duration = p.get("jlqx", "")            # 交流期限
+            agreement = p.get("jlxy", "")           # 协议类型（校级/院级）
+            scope = p.get("jlfwmc", "")             # 交流范围（校级/院级）
+            semester = p.get("xqmc", "")            # 学期
+
+            # 截止日期
+            deadline_str = p.get("jzrq", "")
+            deadline = None
+            deadline_display = "无截止日期"
+            urgent = False
+            if deadline_str:
+                try:
+                    deadline = datetime.strptime(
+                        deadline_str.strip(), "%Y-%m-%d %H:%M:%S"
+                    ).replace(tzinfo=CN_TZ)
+                    days_left = (deadline - now_cn).days
+                    if days_left < 0:
+                        deadline_display = (
+                            f"已截止（{deadline.strftime('%m月%d日')}）"
+                        )
+                    elif days_left == 0:
+                        deadline_display = (
+                            f"⚠️ 今天截止（{deadline.strftime('%m月%d日')}）"
+                        )
+                        urgent = True
+                    elif days_left <= 7:
+                        deadline_display = (
+                            f"⚠️ 距截止 {days_left} 天"
+                            f"（{deadline.strftime('%m月%d日')}）"
+                        )
+                        urgent = True
+                    elif days_left <= 30:
+                        deadline_display = (
+                            f"距截止 {days_left} 天"
+                            f"（{deadline.strftime('%m月%d日')}）"
+                        )
+                    else:
+                        deadline_display = (
+                            f"距截止 {days_left} 天"
+                            f"（{deadline.strftime('%m月%d日')}）"
+                        )
+                except (ValueError, TypeError):
+                    deadline_display = f"截止: {deadline_str}"
+
+            # 交流日期范围
+            start_date = p.get("jlksrq", "")        # 交流开始
+            end_date = p.get("jljzrq", "")          # 交流结束
+            date_range = ""
+            if start_date and end_date:
+                date_range = f"{start_date} ~ {end_date}"
+
+            # 人数信息
+            applied = p.get("jllbsqrs", "") or p.get("jlsqrs", "")  # 已申请
+            capacity = p.get("jlpcrs", "")          # 批次人数
+            quota_info = ""
+            if applied and capacity:
+                quota_info = f"已申请 {applied} / 批次容量 {capacity}"
+            elif applied:
+                quota_info = f"已申请 {applied} 人"
+
+            # 判断是否可能满员
+            try:
+                if int(applied or 0) > 0 and int(capacity or 0) > 0 and int(applied) >= int(capacity):
+                    quota_info += " ⚠️ 可能已满"
+            except ValueError:
+                pass
+
+            # 构建内容
+            location = (
+                f"{region}/{country}" if region and country
+                else region or country
+            )
             content_parts = [
-                f"项目名称: {prog_name}",
-                f"学校/单位: {school}" if school else "",
-                f"国家/地区: {country}" if country else "",
-                f"名额: {quota}" if quota else "",
-                f"报名时间: {apply_start} ~ {apply_end}" if apply_start else "",
-                f"状态: {status}" if status else "",
+                f"发布单位: {department}",
+                f"交流学校: {school}" if school else "",
+                f"国家/地区: {location}" if location else "",
+                f"项目类型: {prog_type}" if prog_type else "",
+                f"交流期限: {duration}" if duration else "",
+                f"协议类型: {agreement} ({scope})" if agreement else "",
+                f"交流时间: {date_range}" if date_range else "",
+                f"报名截止: {deadline_display}",
+                f"面向对象: {target}" if target else "",
+                f"人数: {quota_info}" if quota_info else "",
+                f"学期: {semester}" if semester else "",
+                f"详情: {link}" if link else "",
             ]
+
+            urgency_tag = " [⚠️紧急]" if urgent else ""
 
             items.append(RawItem(
                 source_name="教务系统 - 对外交流",
                 source_level="L4",
-                url=(
-                    f"{ZDBK_EXCHANGE_URL}&su={username}" if username else ""
+                url=link or (
+                    "https://zdbk.zju.edu.cn/jwglxt/jlsgl/"
+                    "xjlssq_cxJlssqIndex.html"
                 ),
-                title=f"[交流项目] {prog_name}",
+                title=f"[交流项目{urgency_tag}] {title}",
                 raw_content="\n".join(p for p in content_parts if p),
-                publish_time=now_cn,
+                publish_time=deadline or now_cn,
                 fetched_at=now_cn,
             ))
 
-        logger.info(f"对外交流: 解析出 {len(items)} 个项目")
+        # 统计
+        urgent_count = sum(
+            1 for i in items
+            if "今天截止" in (i.raw_content or "")
+            or ("距截止" in (i.raw_content or "")
+                and any(f"距截止 {d} 天" in (i.raw_content or "")
+                       for d in range(0, 8)))
+        )
+        logger.info(
+            f"对外交流: {len(items)} 个项目（近期截止 {urgent_count} 个）"
+        )
         return items
 
     # ══════════════════════════════════════════════════════════════
