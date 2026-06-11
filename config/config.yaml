@@ -110,35 +110,112 @@ auth:
 
 sources:
 
-  # ── L0: 完全公开 ─────────────────────────────────────────────────
-  # 无需登录，直接抓取。优先使用 RSS/API，无则降级为 HTML 解析。
+  # ══════════════════════════════════════════════════════════════
+  #  L0 — RSS + 静态 HTML（简单 HTTP 请求即可，无需浏览器/API）
+  # ══════════════════════════════════════════════════════════════
 
   l0_rss:
     - name: "arXiv CS.AI"
       url: "https://arxiv.org/rss/cs.AI"
-      enabled: false
+      enabled: true
       keywords: ["agent", "LLM", "reinforcement learning", "RAG", "multi-agent"]
       max_items: 15
 
     - name: "arXiv CS.LG"
       url: "https://arxiv.org/rss/cs.LG"
-      enabled: false
+      enabled: true
       keywords: ["deep learning", "transformer", "optimization", "generative model"]
       max_items: 10
 
     - name: "arXiv CS.CV"
       url: "https://arxiv.org/rss/cs.CV"
-      enabled: false
+      enabled: true
       keywords: ["multimodal", "image generation", "vision transformer"]
       max_items: 10
 
     - name: "arXiv CS.CL"
       url: "https://arxiv.org/rss/cs.CL"
-      enabled: false
+      enabled: true
       keywords: ["language model", "NLP", "text generation"]
       max_items: 10
 
-  l0_api:
+    - name: "arXiv CS.IR"
+      url: "https://arxiv.org/rss/cs.IR"
+      enabled: true
+      keywords: ["information retrieval", "search", "ranking", "recommendation"]
+      max_items: 10
+
+    - name: "arXiv CS.MA"
+      url: "https://arxiv.org/rss/cs.MA"
+      enabled: true
+      keywords: ["multi-agent", "coordination", "game theory", "consensus"]
+      max_items: 10
+
+  l0_html:
+    - name: "浙江大学新闻官网"
+      url: "http://www.news.zju.edu.cn"
+      enabled: true
+      keywords: ["竞赛", "奖学金", "出国", "交流", "申请", "创新", "科研", "启真"]
+      selector: ".news_list li .news_title a"        # ✅ 已验证，静态 HTML
+      max_items: 10
+
+    - name: "全国大学生数学建模竞赛"
+      url: "https://www.cmathc.org.cn/"
+      enabled: true
+      keywords: ["报名", "赛题", "获奖", "通知"]
+      selector: "ul.newslist li"
+      max_items: 10
+
+    - name: "挑战杯官网"
+      url: "https://www.tiaozhanbei.net"
+      enabled: true
+      keywords: ["通知", "报名", "结果", "获奖", "截止"]
+      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
+      max_items: 10
+
+    - name: "互联网+ 创新创业大赛"
+      url: "https://cy.ncss.cn"
+      enabled: true
+      keywords: ["报名", "通知", "决赛", "获奖"]
+      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
+      max_items: 10
+
+    - name: "美赛 COMAP (MCM/ICM)"
+      url: "https://www.comap.com/contests/mcm-icm"
+      enabled: true
+      keywords: ["registration", "deadline", "results"]
+      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
+      max_items: 10
+
+    - name: "牛客网竞赛"
+      url: "https://ac.nowcoder.com/acm/contest/vip-index"
+      enabled: true
+      keywords: ["报名", "进行中", "即将开始"]
+      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
+      max_items: 8
+
+    - name: "CSC 国家留学基金委"
+      url: "https://www.csc.edu.cn/chuguo"
+      enabled: false
+      keywords: ["申请", "名额", "截止", "公告", "选派"]
+      selector: ".list_content li"
+      max_items: 10
+
+    # 教授/实验室主页（变更检测模式）
+    - name: "某教授实验室主页"
+      url: "https://person.zju.edu.cn/example"
+      enabled: false
+      keywords: []
+      monitor: true
+      max_items: 5
+
+  # ══════════════════════════════════════════════════════════════
+  #  L1 — API + Playwright（竞赛 & ZJU 公开页面）
+  #  l1_api:       REST API 端点，需要实现 API 采集器（Phase 2）
+  #  l1_playwright: JS 渲染页面，需要真实浏览器
+  # ══════════════════════════════════════════════════════════════
+
+  l1_api:
     - name: "Semantic Scholar AI"
       url: "https://api.semanticscholar.org/graph/v1/paper/search?query=artificial+intelligence&limit=20"
       enabled: false
@@ -151,82 +228,38 @@ sources:
       keywords: []
       max_items: 10
 
-  l0_html:
-    - name: "全国大学生数学建模竞赛"
-      url: "https://www.cmathc.org.cn/"
-      enabled: true
-      keywords: ["报名", "赛题", "获奖", "通知"]
-      selector: "ul.newslist li"                    # ✅ 已验证：58 条
-      max_items: 10
-
-    - name: "CSC 国家留学基金委"
-      url: "https://www.csc.edu.cn/chuguo"
-      enabled: false
-      keywords: ["申请", "名额", "截止", "公告", "选派"]
-      selector: ".list_content li"
-      max_items: 10
-
-    - name: "蓝桥杯大赛"
-      url: "https://www.lanqiao.cn"
-      enabled: false
-      keywords: ["报名", "省赛", "国赛", "通知"]
-      selector: ".news-list li"
-      max_items: 10
-
-    - name: "浙江大学国际合作处"
-      url: "https://www.ir.zju.edu.cn"
-      enabled: false                                # ❌ 连接拒绝，需校内网或 VPN
-      keywords: ["交流", "出国", "交换", "奖学金", "项目"]
-      selector: ".news-list li"
-      max_items: 10
-
-    - name: "浙江大学研究生院公告"
-      url: "https://grs.zju.edu.cn"
-      enabled: false                                # 需登录后确认具体 URL
-      keywords: ["招生", "答辩", "奖学金", "评优"]
-      selector: ".list li"
-      max_items: 10
-
-    - name: "ICPC 国际大学生程序设计竞赛"
-      url: "https://icpc.global"
-      enabled: false
-      keywords: ["regional", "final", "registration"]
-      selector: ".news-list li"
-      max_items: 10
-
-    # 教授/实验室主页（变更检测模式）
-    - name: "某教授实验室主页"
-      url: "https://person.zju.edu.cn/example"
+    - name: "GitHub API"
+      url: "https://api.github.com/orgs/ZJU-Advanced-Research/repos"
       enabled: false
       keywords: []
-      monitor: true                                 # 变更检测：内容变了才触发
-      max_items: 5
-
-  # ── L1: 动态渲染页面（需 Playwright 打开浏览器）──────────────────
-  # 以下网站为 SPA（Vue/React），静态 HTML 为空壳，必须用真实浏览器渲染。
-  # wait_selector: 等待此元素出现才认为页面加载完成（可先用 "a" 占位再实测调整）
-  # selector: 实际提取新闻链接的 CSS 选择器
-  l1_playwright:
-    - name: "浙江大学新闻官网"
-      url: "http://www.news.zju.edu.cn"
-      enabled: true                                 # 用户已修正 URL
-      keywords: ["竞赛", "奖学金", "出国", "交流", "申请", "创新", "科研","启真"]
-      wait_selector: ".news_list"                            # 页面出现链接即认为渲染完成
-      selector: ".news_list li .news_title a"                                 # 需 F12 确认新闻列表的实际选择器后替换
       max_items: 10
 
-    - name: "挑战杯官网"
-      url: "https://www.tiaozhanbei.net"
-      enabled: true
-      keywords: ["通知", "报名", "结果", "获奖", "截止"]
+    - name: "飞书开放平台"
+      url: "https://open.feishu.cn/open-apis/im/v1/messages"
+      enabled: false                                # 需创建应用获取 App Token
+      keywords: []
+      max_items: 20
+
+    - name: "B站 浙江大学官方"
+      url: "https://api.bilibili.com/x/space/arc/search?mid=385924"
+      enabled: false
+      keywords: ["讲座", "活动", "竞赛", "招生"]
+      max_items: 5
+
+  l1_playwright:
+    # ── ZJU 公开 SPA 页面 ──
+    - name: "浙江大学新闻动态"
+      url: "https://www.zju.edu.cn/news/"
+      enabled: false
+      keywords: ["竞赛", "奖学金", "出国", "交流", "通知"]
       wait_selector: "a"
       selector: "a"
       max_items: 10
 
-    - name: "互联网+ 创新创业大赛"
-      url: "https://cy.ncss.cn"
+    - name: "浙江大学官网首页"
+      url: "https://www.zju.edu.cn"
       enabled: false
-      keywords: ["报名", "通知", "决赛", "获奖"]
+      keywords: ["通知", "公告", "竞赛", "奖学金", "出国"]
       wait_selector: "a"
       selector: "a"
       max_items: 10
@@ -239,6 +272,72 @@ sources:
       selector: "a"
       max_items: 10
 
+    # ── ZJU 内网/VPN 页面（需特殊网络环境）──
+    - name: "浙江大学研究生院公告"
+      url: "https://grs.zju.edu.cn"
+      enabled: false                              # SSL 错误，需校园网
+      keywords: ["招生", "答辩", "奖学金", "评优"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "浙江大学国际合作处"
+      url: "https://www.ir.zju.edu.cn"
+      enabled: false                              # 连接拒绝，需 VPN
+      keywords: ["交流", "出国", "交换", "奖学金", "项目"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "浙江大学图书馆"
+      url: "https://libweb.zju.edu.cn"
+      enabled: false
+      keywords: ["数据库", "讲座", "开放", "资源"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "浙江大学人工智能学院"
+      url: "https://ai.zju.edu.cn"
+      enabled: false
+      keywords: ["项目", "短学期", "基金", "竞赛"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "竺可桢学院公开通知"
+      url: "http://office.ckc.zju.edu.cn"
+      enabled: false
+      keywords: ["选拔", "项目", "通知", "荣誉课程"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "计算机学院公开通知"
+      url: "http://cspo.zju.edu.cn"
+      enabled: false
+      keywords: ["讲座", "科研", "招生", "竞赛"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "管理学院公开通知"
+      url: "http://www.som.zju.edu.cn"
+      enabled: false
+      keywords: ["通知", "讲座", "竞赛", "奖学金"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    # ── 竞赛 SPA 页面 ──
+    - name: "ICPC 国际大学生程序设计竞赛"
+      url: "https://icpc.global"
+      enabled: false
+      keywords: ["regional", "final", "registration"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
     - name: "CCPC 中国大学生程序设计竞赛"
       url: "https://ccpc.io"
       enabled: false
@@ -247,15 +346,33 @@ sources:
       selector: "a"
       max_items: 10
 
-    - name: "牛客网竞赛"
-      url: "https://ac.nowcoder.com/acm/contest/vip-index"
+    - name: "华为开发者大赛"
+      url: "https://developer.huaweicloud.com/competition/list"
       enabled: false
-      keywords: ["报名", "进行中", "即将开始"]
+      keywords: ["报名", "通知", "赛题", "开发者"]
       wait_selector: "a"
       selector: "a"
-      max_items: 8
+      max_items: 10
 
-  # ── L2: 微信公众号（通过 RSSHub 桥接）───────────────────────────
+    - name: "Kaggle 竞赛"
+      url: "https://www.kaggle.com/competitions"
+      enabled: false
+      keywords: ["featured", "research", "prize", "deadline"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+    - name: "蓝桥杯大赛"
+      url: "https://dasai.lanqiao.cn/"
+      enabled: false                              # SPA 页面，L0 静态 HTML 无链接
+      keywords: ["报名", "省赛", "国赛", "通知"]
+      wait_selector: "a"
+      selector: "a"
+      max_items: 10
+
+  # ══════════════════════════════════════════════════════════════
+  #  L2 — 微信公众号（通过 RSSHub 桥接，Phase 4）                  ═
+  # ══════════════════════════════════════════════════════════════
   l2_wechat:
     - name: "浙江大学"
       account_name: "浙江大学官方公众号"
@@ -281,31 +398,21 @@ sources:
       keywords: ["通知", "报名", "获奖", "展示"]
       max_items: 10
 
-  # ── L3: 第三方平台 API ──────────────────────────────────────────
-  l3_api:
-    - name: "B站 浙江大学官方"
-      url: "https://api.bilibili.com/x/space/arc/search?mid=385924"
-      enabled: false
-      keywords: ["讲座", "活动", "竞赛", "招生"]
-      max_items: 5
-
-  # ── L4: ZJU 统一认证（需学号密码登录）───────────────────────────
-  # ⚠️ 这些 URL 需要你在浏览器中登录后，从地址栏复制真实 URL 填入。
-  #    方法：Chrome 登录 courses.zju.edu.cn → 进入目标页面 → 复制完整 URL → 粘贴到这里
-  #    如果 URL 不对导致打不开，先禁用该源，Phase 5 会逐个验证。
+  # ══════════════════════════════════════════════════════════════
+  #  L4 — ZJU 统一认证（需学号密码登录，Phase 5）                   ═
+  # ══════════════════════════════════════════════════════════════
   l4_zjuam:
     - name: "学在浙大 课程通知"
       url: "https://courses.zju.edu.cn"
-      enabled: false
+      enabled: true
       keywords: ["作业", "考试", "截止", "通知", "公告"]
       max_items: 20
 
-    - name: "教务系统公告"
+    - name: "教务系统 通知公告"
       url: "https://zdbk.zju.edu.cn/"
-      enabled: false
-      keywords: ["选课", "考试", "成绩", "补考", "通知","交流"]
-      selector: "#bulletin-list tr"
-      max_items: 10
+      enabled: true
+      keywords: ["选课", "考试", "成绩", "补考", "交流", "辅修", "四六级", "保研", "考研", "学期", "注册", "奖学金"]
+      max_items: 30
 
     - name: "研究生院内网通知"
       url: "https://grs.zju.edu.cn"
@@ -316,10 +423,12 @@ sources:
     - name: "管理学院内网"
       url: "https://sommis.zju.edu.cn/"
       enabled: false
-      keywords: ["社会实践","讲座","通知","招募"]
+      keywords: ["社会实践", "讲座", "通知", "招募"]
       max_items: 10
 
-  # ── L5: 校园网专属（CC98 等）────────────────────────────────────
+  # ══════════════════════════════════════════════════════════════
+  #  L5 — 校园网专属（CC98 等，Phase 5）                           ═
+  # ══════════════════════════════════════════════════════════════
   l5_internal:
     - name: "CC98 热门帖子"
       url: "https://www.cc98.org"
@@ -331,6 +440,25 @@ sources:
       url: "https://www.cc98.org/board/5"
       enabled: false
       keywords: ["讲座", "科研", "实验室", "导师", "招生"]
+      max_items: 20
+
+    # CC98 REST API（需 Bearer Token + 校园网）── 设计文档 ✅ 确认
+    - name: "CC98 API — 热门帖"
+      url: "https://www.cc98.org/api/topic/hot"
+      enabled: false
+      keywords: []
+      max_items: 30
+
+    - name: "CC98 API — 版面帖子"
+      url: "https://www.cc98.org/api/board/{board_id}/topic"  # {board_id} 替换为目标版面 ID
+      enabled: false
+      keywords: []
+      max_items: 20
+
+    - name: "CC98 API — 关键词搜索"
+      url: "https://www.cc98.org/api/topic/search?keyword={kw}"  # {kw} 替换为搜索词
+      enabled: false
+      keywords: []
       max_items: 20
 
 
