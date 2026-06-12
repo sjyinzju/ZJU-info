@@ -11,6 +11,7 @@ from src.models.raw_item import RawItem
 from src.models.daily_report import DailyReport, ReportStats
 from src.collectors.l0_rss import L0RssCollector
 from src.collectors.l0_html import L0HtmlCollector
+from src.collectors.l0_jina import L0JinaCollector
 from src.collectors.l1_playwright import L1PlaywrightCollector
 from src.collectors.l4_zjuam import L4ZjuAmCollector
 from src.collectors.l5_cc98 import L5CC98Collector
@@ -25,6 +26,7 @@ from src.renderer.markdown_renderer import render_report, save_report
 COLLECTOR_MAP = {
     "l0_rss": L0RssCollector,
     "l0_html": L0HtmlCollector,
+    "l0_jina": L0JinaCollector,
     "l1_playwright": L1PlaywrightCollector,
     "l4_zjuam": L4ZjuAmCollector,
     "l5_internal": L5CC98Collector,
