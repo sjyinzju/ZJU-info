@@ -60,19 +60,17 @@ def build_system_prompt(config: AppConfig) -> str:
     if prompts.filter:
         parts.append(f"## 筛选规则\n{prompts.filter}")
 
-    # CC98 论坛内容特殊提示（与其他来源共用 system prompt 时不冲突）
-    parts.append(
-        "## 关于 CC98 论坛来源\n"
-        "CC98 是浙大校内论坛，信息来自学生真实分享，价值极高。\n"
-        "筛选 CC98 帖子时，请放宽标准：即使标题未精确命中关键词，只要内容涉及以下主题就应保留：\n"
-        "- 课程推荐/避坑、教师评价、给分情况\n"
-        "- 实习/校招内推、面试经验、offer 比较\n"
-        "- 实验室招募、导师评价、科研心得\n"
-        "- 历年卷/复习资料分享、考试经验\n"
-        "- 竞赛组队、项目招募、活动报名\n"
-        "- 转专业/辅修经验、出国交流心得\n"
-        "- 投资理财、编程技术等实用分享"
+    # CC98 论坛内容（强制保留指令）
+    cc98_rule = (
+        "## !! 关于 CC98 论坛来源（最高优先级筛选指令）\n"
+        "CC98 是浙大校内论坛，所有帖子来自学生真实分享，是日报的核心信息来源。\n"
+        "**必须遵守以下规则：**\n"
+        "1. CC98 帖子（来源包含 CC98 的条目）至少保留 50%，除非明显是灌水/广告/纯表情\n"
+        "2. 带有 [CC98高价值] 前缀的 CC98 帖子是系统标注的高价值内容，**必须全部保留**\n"
+        "3. 即使标题不精确匹配你的筛选关键词，只要内容涉及课程、科研、实习、经验、资源等实用话题就应保留\n"
+        '4. CC98 帖子被过滤掉的唯一合理理由是：纯水帖（如打卡签到）、纯广告、或与浙大学生完全无关的内容'
     )
+    parts.append(cc98_rule)
 
     # 日报要求
     if prompts.summary:
@@ -82,15 +80,34 @@ def build_system_prompt(config: AppConfig) -> str:
 
 
 def build_user_message(items: List[RawItem]) -> str:
-    """将待筛选的 RawItem 列表格式化为 LLM 用户消息"""
+    """将待筛选的 RawItem 列表格式化为 LLM 用户消息，CC98 帖自动标注优先级。"""
     lines = ["以下是今日采集到的信息，请筛选、分类、摘要：", ""]
+
+    # CC98 高价值关键词（用于预标注，引导 LLM 保留）
+    CC98_BOOST_KW = [
+        "实习", "内推", "面经", "offer", "招募", "组队", "招人",
+        "经验", "分享", "推荐", "避坑", "避雷", "评价", "导师",
+        "历年卷", "复习", "资料", "考试", "课程",
+        "项目", "竞赛", "报名", "比赛",
+        "出国", "留学", "申请", "暑研", "交换",
+        "转专业", "辅修", "微辅修",
+    ]
 
     for i, item in enumerate(items, 1):
         pub_str = item.publish_time.strftime("%Y-%m-%d") if item.publish_time else "未知日期"
+
+        # CC98 帖子自动标注优先级：
+        title_prefix = ""
+        if "CC98" in (item.source_name or ""):
+            searchable = f"{item.title} {item.raw_content or ''}".lower()
+            boost = any(kw in searchable for kw in CC98_BOOST_KW)
+            if boost:
+                title_prefix = "[CC98高价值] "
+                item.title = f"{title_prefix}{item.title}"  # 就地修改，传给后续
+
         lines.append(f"### [{i}] {item.title}")
         lines.append(f"来源: {item.source_name} | 日期: {pub_str}")
         lines.append(f"链接: {item.url}")
-        # 严格控制每条内容长度，避免超出 LLM 上下文窗口
         content = (item.raw_content or "").strip()[:400]
         if len(item.raw_content or "") > 400:
             content += "…"
