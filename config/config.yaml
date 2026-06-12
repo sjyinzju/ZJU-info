@@ -218,7 +218,7 @@ sources:
   l0_jina:
     - name: "浙大本科生院全部通知"
       url: "https://bksy.zju.edu.cn/28418/list.htm"
-      enabled: true
+      enabled: false                               # → 已改用 l0_auto（本地 readability）
       keywords: ["竞赛", "选课", "考试", "交流", "评优"]
       max_items: 15
 
@@ -246,12 +246,6 @@ sources:
       keywords: ["讲座", "培训", "咨询", "指导"]
       max_items: 15
 
-    - name: "浙大图书馆 讲座展览"
-      url: "https://libweb.zju.edu.cn/jzyl/list.htm"
-      enabled: true
-      keywords: ["讲座", "展览", "数据库", "培训"]
-      max_items: 15
-
     - name: "浙大AI学院 招生通知"
       url: "https://ai.zju.edu.cn/zstz/list.htm"
       enabled: true
@@ -260,9 +254,42 @@ sources:
 
     - name: "浙大AI学院内网 重点通知"
       url: "http://ai.office.zju.edu.cn/zdtzygsgg/list.htm"
-      enabled: true
+      enabled: false                               # → 已改用 l0_auto（本地 readability）
       keywords: ["项目", "课程", "通知", "公告", "科研"]
       max_items: 15
+
+  # ══════════════════════════════════════════════════════════════
+  #  L0 Auto — readability 算法自动化提取（零选择器维护）
+  #  适合内网 .htm 列表页（Jina 云服务器无法访问的 URL）
+  # ══════════════════════════════════════════════════════════════
+  l0_auto:
+    - name: "浙大本科生院全部通知"
+      url: "https://bksy.zju.edu.cn/28418/list.htm"
+      enabled: true
+      keywords: ["竞赛", "选课", "考试", "交流", "评优", "通知"]
+      max_items: 20
+
+    - name: "浙大本科生院全部通知(第2页)"
+      url: "https://bksy.zju.edu.cn/28418/list2.htm"
+      enabled: true
+      keywords: ["竞赛", "选课", "考试", "交流", "评优", "通知"]
+      max_items: 20
+
+    - name: "浙大AI学院内网 重点通知"
+      url: "http://ai.office.zju.edu.cn/zdtzygsgg/list.htm"
+      enabled: true
+      keywords: ["项目", "课程", "通知", "公告", "科研"]
+      max_items: 20
+
+  # ══════════════════════════════════════════════════════════════
+  #  L0 Lib — 图书馆讲座展览专用（列表→详情页双层抓取）
+  # ══════════════════════════════════════════════════════════════
+  l0_lib:
+    - name: "浙大图书馆 讲座展览"
+      url: "https://libweb.zju.edu.cn/jzyl/list.htm"
+      enabled: true
+      keywords: ["讲座", "展览", "数据库", "培训"]
+      max_items: 3  # 抓取前 3 页（~78 条，覆盖约 2 个月）
 
   l1_api:
     - name: "Semantic Scholar AI"
@@ -398,7 +425,8 @@ sources:
 #以下通过jina API获取
 
 #浙江大学本科生院全部通知
-#https://bksy.zju.edu.cn/28418/list.htm  
+#https://bksy.zju.edu.cn/28418/list.htm #第一页
+#https://bksy.zju.edu.cn/28418/list2.htm #第二页 
 
 #浙江大学本科生对外交流服务平台
 #https://ugrs.zju.edu.cn/dwjlfwpt/42978/list.htm #重点提示

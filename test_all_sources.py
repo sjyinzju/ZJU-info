@@ -24,6 +24,7 @@ from src.models.daily_report import DailyReport, ReportStats
 from src.collectors.l0_rss import L0RssCollector
 from src.collectors.l0_html import L0HtmlCollector
 from src.collectors.l0_jina import L0JinaCollector
+from src.collectors.l0_lib import L0LibCollector
 from src.collectors.l1_playwright import L1PlaywrightCollector
 from src.collectors.l4_zjuam import L4ZjuAmCollector
 from src.collectors.l5_cc98 import L5CC98Collector
@@ -36,6 +37,7 @@ COLLECTOR_MAP = {
     "l0_rss": L0RssCollector,
     "l0_html": L0HtmlCollector,
     "l0_jina": L0JinaCollector,
+    "l0_lib": L0LibCollector,
     "l1_playwright": L1PlaywrightCollector,
     "l4_zjuam": L4ZjuAmCollector,
     "l5_internal": L5CC98Collector,
@@ -47,7 +49,7 @@ def enable_all_sources(config: AppConfig):
     sources = config.sources
     count = 0
     for cat in [
-        "l0_rss", "l0_html", "l0_jina",
+        "l0_rss", "l0_html", "l0_jina", "l0_auto", "l0_lib",
         "l1_api", "l1_playwright",
         "l2_wechat", "l4_zjuam", "l5_internal",
     ]:
