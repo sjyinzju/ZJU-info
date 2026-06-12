@@ -190,13 +190,6 @@ sources:
       selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
       max_items: 8
 
-    - name: "CSC 国家留学基金委"
-      url: "https://www.csc.edu.cn/chuguo"
-      enabled: false
-      keywords: ["申请", "名额", "截止", "公告", "选派"]
-      selector: ".list_content li"
-      max_items: 10
-
     # 教授/实验室主页（变更检测模式）
     - name: "某教授实验室主页"
       url: "https://person.zju.edu.cn/example"
@@ -204,6 +197,19 @@ sources:
       keywords: []
       monitor: true
       max_items: 5
+
+
+#竞赛类
+#蓝桥杯大赛
+#https://dasai.lanqiao.cn/notices/?progid=20
+
+#华为开发者大赛
+#https://developer.huaweicloud.com/competition/list
+
+#Kaggle竞赛
+#https://www.kaggle.com/competitions
+#https://www.kaggle.com/competitions?page=2    #等等，很多页，找正在进行的
+
 
   # ══════════════════════════════════════════════════════════════
   #  L1 — API + Playwright（竞赛 & ZJU 公开页面）
@@ -257,6 +263,24 @@ sources:
       enabled: false                               # → 已改用 l0_auto（本地 readability）
       keywords: ["项目", "课程", "通知", "公告", "科研"]
       max_items: 15
+
+    - name: "蓝桥杯大赛"
+      url: "https://dasai.lanqiao.cn/notices/?progid=20"
+      enabled: true
+      keywords: ["报名", "省赛", "国赛", "通知", "获奖"]
+      max_items: 20
+
+    - name: "华为开发者大赛"
+      url: "https://developer.huaweicloud.com/competition/list"
+      enabled: true
+      keywords: ["报名", "通知", "赛题", "开发者"]
+      max_items: 20
+
+    - name: "Kaggle 竞赛"
+      url: "https://www.kaggle.com/competitions"
+      enabled: true
+      keywords: ["featured", "research", "prize", "deadline", "active"]
+      max_items: 20
 
   # ══════════════════════════════════════════════════════════════
   #  L0 Auto — readability 算法自动化提取（零选择器维护）
@@ -321,106 +345,6 @@ sources:
       enabled: false
       keywords: ["讲座", "活动", "竞赛", "招生"]
       max_items: 5
-
-  l1_playwright:
-    # ── ZJU 公开 SPA 页面 ──
-
-    - name: "浙江大学就业指导中心"
-      url: "https://www.career.zju.edu.cn"
-      enabled: false
-      keywords: ["招聘", "宣讲会", "实习", "校招"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "浙江大学国际合作处"
-      url: "https://www.ir.zju.edu.cn"
-      enabled: false                              # 连接拒绝，需 VPN
-      keywords: ["交流", "出国", "交换", "奖学金", "项目"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "浙江大学图书馆"
-      url: "https://libweb.zju.edu.cn"
-      enabled: false
-      keywords: ["数据库", "讲座", "开放", "资源"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "浙江大学人工智能学院"
-      url: "https://ai.zju.edu.cn"
-      enabled: false
-      keywords: ["项目", "短学期", "基金", "竞赛"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "竺可桢学院公开通知"
-      url: "http://office.ckc.zju.edu.cn"
-      enabled: false
-      keywords: ["选拔", "项目", "通知", "荣誉课程"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "计算机学院公开通知"
-      url: "http://cspo.zju.edu.cn"
-      enabled: false
-      keywords: ["讲座", "科研", "招生", "竞赛"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "管理学院公开通知"
-      url: "http://www.som.zju.edu.cn"
-      enabled: false
-      keywords: ["通知", "讲座", "竞赛", "奖学金"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    # ── 竞赛 SPA 页面 ──
-    - name: "ICPC 国际大学生程序设计竞赛"
-      url: "https://icpc.global"
-      enabled: false
-      keywords: ["regional", "final", "registration"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "CCPC 中国大学生程序设计竞赛"
-      url: "https://ccpc.io"
-      enabled: false
-      keywords: ["报名", "通知", "比赛", "结果"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "华为开发者大赛"
-      url: "https://developer.huaweicloud.com/competition/list"
-      enabled: false
-      keywords: ["报名", "通知", "赛题", "开发者"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "Kaggle 竞赛"
-      url: "https://www.kaggle.com/competitions"
-      enabled: false
-      keywords: ["featured", "research", "prize", "deadline"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
-
-    - name: "蓝桥杯大赛"
-      url: "https://dasai.lanqiao.cn/"
-      enabled: false                              # SPA 页面，L0 静态 HTML 无链接
-      keywords: ["报名", "省赛", "国赛", "通知"]
-      wait_selector: "a"
-      selector: "a"
-      max_items: 10
 
 #以下通过jina API获取
 

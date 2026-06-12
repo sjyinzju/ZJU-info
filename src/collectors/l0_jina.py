@@ -135,11 +135,19 @@ class L0JinaCollector(BaseCollector):
             title = title.strip()
             href = href.strip()
 
-            # 跳过太短的标题、导航类链接、锚点
-            if len(title) < 4:
+            # 跳过太短的标题
+            if len(title) < 6:
                 continue
+            # 跳过锚点
             if href.startswith("#"):
                 continue
+            # 仅过滤最明显的 UI 噪音（其余由 LLM 筛选）
+            # 跳过纯图标/图片链接（Jina 常把图片 alt 作为链接文本）
+            if title.startswith("!["):
+                continue
+            if "Image" in title and len(title) < 20:
+                continue
+            # 去重
             if href in seen_urls:
                 continue
             seen_urls.add(href)
