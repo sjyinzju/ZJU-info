@@ -14,6 +14,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -51,6 +52,24 @@ ZDBK_EXCHANGE_URL = (
     f"{ZDBK_BASE}/jlsgl/xjlssq_cxJlssqIndex.html"
     "?doType=query&cxType=jlxm&gnmkdm=N10653005"
 )
+
+# ── 管理学院内网 (sommis.zju.edu.cn) ────────────────────────────
+SOMMIS_OAUTH_URL = (
+    "https://zjuam.zju.edu.cn/cas/oauth2.0/authorize"
+    "?response_type=code"
+    "&client_id=MyFgznewjJZK4608to"
+    "&redirect_uri=https://sommis.zju.edu.cn/oauth2019.jsp"
+)
+SOMMIS_BASE = "https://sommis.zju.edu.cn"
+SOMMIS_NOTICE_PATH = "/user/app/CommonAnnounceView.jsp"
+SOMMIS_DETAIL_PATH = "/user/app/AnnounceViewDetail.jsp"
+
+# 用户关注的管理学院分类
+SOMMIS_FOCUS_CATEGORIES = {
+    "2": "学工", "3": "教学", "4": "科研",
+    "5": "职业", "6": "党建", "80": "系所",
+    "1": "院总办",  # 官方重要通知
+}
 
 GRADES_CACHE_DIR = Path("config/cookies")
 
@@ -121,6 +140,9 @@ class L4ZjuAmCollector(BaseCollector):
         try:
             if "学在浙大" in src_name or "courses" in src_url:
                 items.extend(await self._collect_courses_todos())
+
+            if "管理" in src_name or "sommis" in src_url:
+                items.extend(await self._collect_sommis())
 
             if "教务" in src_name or "zdbk" in src_url:
                 items.extend(await self._collect_zdbk())
@@ -208,6 +230,212 @@ class L4ZjuAmCollector(BaseCollector):
             f"（已过期 {expired}，紧急 {urgent}，本周 {week}）"
         )
         return items
+
+    # ══════════════════════════════════════════════════════════════
+    #  管理学院内网 (sommis.zju.edu.cn)
+    # ══════════════════════════════════════════════════════════════
+
+    async def _collect_sommis(self) -> List[RawItem]:
+        """
+        采集管理学院内网通知公告。
+
+        OAuth2 授权码登录 → HTML 解析 → 按分类+关键词过滤。
+        """
+        logger.info("采集管理学院内网通知...")
+        timeout = max(self.crawl_config.get("timeout_seconds", 30), 45)
+
+        # Step 1: OAuth2 登录
+        sommis_session = self._login_sommis(timeout)
+        if sommis_session is None:
+            return []
+
+        # Step 2: 获取多页通知（10 页 ≈ 30 天）
+        items: List[RawItem] = []
+        now_cn = datetime.now(CN_TZ)
+        max_pages = 10
+        cutoff_date = now_cn - timedelta(days=30)
+        seen_ids = set()
+
+        for page in range(1, max_pages + 1):
+            try:
+                url = (
+                    f"{SOMMIS_BASE}{SOMMIS_NOTICE_PATH}"
+                    f"?pageIndex={page}&uiid=b.1.3"
+                    f"&path=../app/CommonAnnounceView.jsp"
+                )
+                resp = sommis_session.get(url, timeout=timeout)
+                if resp.status_code != 200:
+                    logger.warning(f"管理学院第{page}页 HTTP {resp.status_code}")
+                    break
+                html = resp.text
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"管理学院第{page}页网络错误: {e}")
+                break
+
+            # 解析 HTML 行
+            page_items = self._parse_sommis_html(html, now_cn, seen_ids)
+            if not page_items:
+                break
+            # 如果本页最旧的条目已超过 30 天，停止翻页
+            oldest = min(page_items, key=lambda x: x.publish_time if x.publish_time else datetime.max.replace(tzinfo=CN_TZ))
+            if oldest.publish_time and oldest.publish_time < cutoff_date:
+                items.extend(page_items)
+                logger.debug(f"管理学院第{page}页: {len(page_items)} 条（已达 30 天边界）")
+                break
+            items.extend(page_items)
+            logger.debug(f"管理学院第{page}页: {len(page_items)} 条")
+
+        sommis_session.close()
+
+        # 统计分类
+        cat_counts = {}
+        for item in items:
+            for cat_name in SOMMIS_FOCUS_CATEGORIES.values():
+                if f"[{cat_name}]" in item.title:
+                    cat_counts[cat_name] = cat_counts.get(cat_name, 0) + 1
+
+        logger.info(
+            f"管理学院: {len(items)} 条 "
+            f"（{' '.join(f'{k}:{v}' for k,v in sorted(cat_counts.items()))}）"
+        )
+        return items
+
+    def _login_sommis(self, timeout: int) -> Optional[requests.Session]:
+        """OAuth2 授权码流程登录管理学院。"""
+        # 创建完全独立的 ZJUAM Session 用于管理学院 OAuth2
+        # （共享的 self._zjuam 可能被其他子系统 SSO 污染状态）
+        username = self.auth_config.get("username", "")
+        password = self.auth_config.get("password", "")
+        independent_zjuam = ZjuAmSession(username, password)
+        if not independent_zjuam.login():
+            logger.warning("管理学院登录失败：独立 ZJUAM 登录失败")
+            independent_zjuam.close()
+            return None
+
+        # 必须使用 _create_session()——ZJUAM OAuth2 需要 @SECLEVEL=0 SSL
+        from src.auth.zjuam_manager import _create_session as _make_session
+        sommis = _make_session()
+        sommis.cookies.set(
+            "iPlanetDirectoryPro", independent_zjuam._iplanet_cookie,
+        )
+        try:
+            resp = sommis.get(SOMMIS_OAUTH_URL, allow_redirects=True, timeout=timeout)
+            if "sommis" not in resp.url:
+                logger.warning(
+                    f"管理学院 OAuth2 未到达 sommis 域，最终 URL: {resp.url[:100]}"
+                )
+                sommis.close()
+                independent_zjuam.close()
+                return None
+
+            # OAuth2 成功到达 sommis。oauth2019.jsp 只有 82 字节的 JS 重定向
+            # → /user/common/main.jsp → 需要手动跟随 JS 重定向
+            if "oauth2019.jsp" in resp.url:
+                logger.debug("管理学院: oauth2019.jsp → 跟随 JS 重定向到 main.jsp")
+                resp = sommis.get(
+                    f"{SOMMIS_BASE}/user/common/main.jsp", timeout=timeout
+                )
+
+            logger.info("管理学院 OAuth2 登录成功")
+            independent_zjuam.close()
+            return sommis
+        except requests.exceptions.RequestException as e:
+            logger.error(f"管理学院登录网络错误: {e}")
+            sommis.close()
+            independent_zjuam.close()
+            return None
+
+    def _parse_sommis_html(
+        self, html: str, now_cn: datetime, seen_ids: set
+    ) -> List[RawItem]:
+        """解析管理学院通知 HTML，提取 RawItem 列表。"""
+        items = []
+        # 匹配每行: <tr> ... [<a>标签</a>] <a>标题</a> [日期] </tr>
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+
+        for row in rows:
+            # 必须同时有标签链接和详情链接才是有效行
+            detail_match = re.search(
+                r'<a[^>]*href=["\'](/user/app/AnnounceViewDetail\.jsp\?announceid=(\d+))["\'][^>]*>(.*?)</a>',
+                row, re.DOTALL,
+            )
+            if not detail_match:
+                continue
+
+            detail_url = detail_match.group(1)
+            announce_id = detail_match.group(2)
+            title = re.sub(r'<[^>]+>', '', detail_match.group(3)).strip()
+            if not title or announce_id in seen_ids:
+                continue
+            seen_ids.add(announce_id)
+
+            # 提取标签
+            cat_match = re.search(
+                r'<a[^>]*href=["\']nav_path\.jsp[^"\']*cateId=(\d+)[^"\']*["\'][^>]*>(.*?)</a>',
+                row, re.DOTALL,
+            )
+            cat_name = ""
+            cat_id = ""
+            if cat_match:
+                cat_id = cat_match.group(1)
+                cat_name = re.sub(r'<[^>]+>', '', cat_match.group(2)).strip()
+
+            # 分类过滤：仅保留关注分类
+            if cat_id not in SOMMIS_FOCUS_CATEGORIES:
+                continue
+
+            cat_label = SOMMIS_FOCUS_CATEGORIES[cat_id]
+
+            # 提取日期
+            date_match = re.search(
+                r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', row
+            )
+            pub_time = now_cn
+            pub_date_str = ""
+            if date_match:
+                pub_date_str = date_match.group(1)
+                try:
+                    pub_time = datetime.strptime(pub_date_str, "%Y-%m-%d %H:%M:%S")
+                    pub_time = pub_time.replace(tzinfo=CN_TZ)
+                except ValueError:
+                    pass
+
+            # 第一级：用户关键词
+            keywords = self.source.keywords
+            if keywords:
+                searchable = f"{title} {cat_name} {cat_label}".lower()
+                if not any(kw.lower() in searchable for kw in keywords):
+                    continue
+
+            # 第二级：高价值关键词精选（控制送入 LLM 的数量）
+            HIGH_VAL_KW = [
+                "通知", "公示", "招募", "报名", "选拔", "实习", "项目",
+                "讲座", "论坛", "毕业", "论文", "选课", "辅修", "考试",
+                "奖学金", "评奖", "评优", "SRTP", "国创", "省创",
+                "暑期", "寒假", "支教", "实践", "参访", "交流",
+                "飞鹰", "求是", "科研", "课题", "导师",
+            ]
+            if not any(kw in title for kw in HIGH_VAL_KW):
+                continue
+
+            items.append(RawItem(
+                source_name="管理学院内网",
+                source_level="L4",
+                # 附加日期标记，使同一通知在每天被视为"新"条目（日报级去重）
+                url=f"{SOMMIS_BASE}{detail_url}#d={now_cn.strftime('%Y%m%d')}",
+                title=f"[{cat_label}] {title}",
+                raw_content=(
+                    f"分类: {cat_label}\n"
+                    f"发布时间: {pub_date_str}\n"
+                    f"公告ID: {announce_id}"
+                ),
+                publish_time=pub_time,
+                fetched_at=now_cn,
+            ))
+
+        return items
+
+    # ══════════════════════════════════════════════════════════════
 
     def _parse_todo_detailed(
         self, todo: dict, now_cn: datetime

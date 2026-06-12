@@ -465,16 +465,11 @@ sources:
                  "美国", "英国", "欧洲", "暑期", "学期", "学位", "科研", "数据", "计算机", "AI", "工程"]
       max_items: 30
 
-    - name: "研究生院内网通知"
-      url: "https://grs.zju.edu.cn"
-      enabled: false
-      keywords: ["答辩", "奖学金", "评优", "通知"]
-      max_items: 10
-
     - name: "管理学院内网"
       url: "https://sommis.zju.edu.cn/"
-      enabled: false
-      keywords: ["社会实践", "讲座", "通知", "招募"]
+      enabled: true
+      keywords: ["讲座", "通知", "招募", "实习", "实践", "项目", "参访",
+                 "交流", "选拔", "报名", "公示", "奖学金", "评奖", "外事"]
       max_items: 10
 
   # ══════════════════════════════════════════════════════════════

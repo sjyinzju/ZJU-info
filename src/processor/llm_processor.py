@@ -60,6 +60,22 @@ def build_system_prompt(config: AppConfig) -> str:
     if prompts.filter:
         parts.append(f"## 筛选规则\n{prompts.filter}")
 
+    # 管理学院内网内容（与 CC98 同等重要）
+    sommis_rule = (
+        "## !! 关于管理学院内网来源（硬性保留指令）\n"
+        "管理学院内网是学院官方通知渠道，来源为「管理学院内网」的条目必须保留 40%-50%。\n"
+        "学院通知标题本身就是核心信息，不要因为内容简短就丢弃。\n"
+        "涉及以下主题的管理学院条目**必须全部保留**：\n"
+        "- 教学：毕业论文、选课、辅修、考试、成绩、Office Time\n"
+        "- 学工：评奖评优、社会实践、支教、志愿者、选拔\n"
+        "- 科研：SRTP、国创省创、飞鹰计划、课题申报\n"
+        "- 职业：实习、招聘、参访、企业活动\n"
+        "- 院总办：暑期安排、重要通知、公示\n"
+        "- 系所：讲座、学术活动、论坛\n"
+        "只有在明显是纯行政事务（如经费报销、设备维护等与学生无关的内容）时才可过滤。"
+    )
+    parts.append(sommis_rule)
+
     # CC98 论坛内容（强制保留指令）
     cc98_rule = (
         "## !! 关于 CC98 论坛来源（最高优先级筛选指令）\n"
@@ -72,6 +88,14 @@ def build_system_prompt(config: AppConfig) -> str:
     )
     parts.append(cc98_rule)
 
+    # 来源覆盖要求
+    parts.append(
+        "## 来源覆盖要求\n"
+        f"每个信息源（source_name）在最终日报中至少保留 {MIN_ITEMS_PER_SOURCE} 条信息。\n"
+        "即使某条信息与用户关注方向的匹配度不是最高，只要它来自该来源且有一定价值，就应保留。\n"
+        "不要因为某个来源的信息偏少或有其他更重要的信息就完全忽略该来源。"
+    )
+
     # 日报要求
     if prompts.summary:
         parts.append(f"## 日报格式要求\n{prompts.summary}")
@@ -80,10 +104,15 @@ def build_system_prompt(config: AppConfig) -> str:
 
 
 def build_user_message(items: List[RawItem]) -> str:
-    """将待筛选的 RawItem 列表格式化为 LLM 用户消息，CC98 帖自动标注优先级。"""
+    """将待筛选的 RawItem 列表格式化为 LLM 用户消息。管理学院条目排在前面。"""
     lines = ["以下是今日采集到的信息，请筛选、分类、摘要：", ""]
 
-    # CC98 高价值关键词（用于预标注，引导 LLM 保留）
+    # 管理学院和 CC98 条目优先排列（引导 LLM 给予更多关注）
+    priority_items = [it for it in items if "管理学院" in (it.source_name or "") or "CC98" in (it.source_name or "")]
+    other_items = [it for it in items if it not in priority_items]
+    sorted_items = priority_items + other_items
+
+    # CC98 高价值关键词
     CC98_BOOST_KW = [
         "实习", "内推", "面经", "offer", "招募", "组队", "招人",
         "经验", "分享", "推荐", "避坑", "避雷", "评价", "导师",
@@ -93,17 +122,20 @@ def build_user_message(items: List[RawItem]) -> str:
         "转专业", "辅修", "微辅修",
     ]
 
-    for i, item in enumerate(items, 1):
+    for i, item in enumerate(sorted_items, 1):
         pub_str = item.publish_time.strftime("%Y-%m-%d") if item.publish_time else "未知日期"
 
-        # CC98 帖子自动标注优先级：
+        # 管理学院 / CC98 帖子自动标注优先级：
         title_prefix = ""
-        if "CC98" in (item.source_name or ""):
+        if "管理学院" in (item.source_name or ""):
+            title_prefix = "[学院通知·必保留] "
+            item.title = f"{title_prefix}{item.title}"
+        elif "CC98" in (item.source_name or ""):
             searchable = f"{item.title} {item.raw_content or ''}".lower()
             boost = any(kw in searchable for kw in CC98_BOOST_KW)
             if boost:
                 title_prefix = "[CC98高价值] "
-                item.title = f"{title_prefix}{item.title}"  # 就地修改，传给后续
+                item.title = f"{title_prefix}{item.title}"
 
         lines.append(f"### [{i}] {item.title}")
         lines.append(f"来源: {item.source_name} | 日期: {pub_str}")
@@ -165,6 +197,70 @@ def _call_llm(
 
 
 # ══════════════════════════════════════════════════════════════
+#  来源覆盖兜底
+# ══════════════════════════════════════════════════════════════
+
+MIN_ITEMS_PER_SOURCE = 3
+
+
+def _ensure_source_coverage(
+    result: LLMReportOutput,
+    all_items: List[RawItem],
+) -> LLMReportOutput:
+    """确保每个信息源在日报中至少出现 MIN_ITEMS_PER_SOURCE 条"""
+    # 统计 LLM 已选中的各来源条目数
+    source_counts: dict = {}
+    selected_urls = {item.source_url for item in result.items}
+    for item in result.items:
+        src = item.source_name or "(未知)"
+        source_counts[src] = source_counts.get(src, 0) + 1
+
+    # 找出不足的来源
+    all_source_names = {it.source_name for it in all_items}
+    underrepresented = []
+    for src_name in all_source_names:
+        if source_counts.get(src_name, 0) < MIN_ITEMS_PER_SOURCE:
+            underrepresented.append(src_name)
+
+    if not underrepresented:
+        return result
+
+    logger.info(
+        f"[LLM] 来源覆盖兜底: {len(underrepresented)} 个源不足 {MIN_ITEMS_PER_SOURCE} 条，补充中..."
+    )
+
+    # 从原始条目中补充
+    for src_name in underrepresented:
+        need = MIN_ITEMS_PER_SOURCE - source_counts.get(src_name, 0)
+        # 从 all_items 中找该来源但未被 LLM 选中的条目
+        candidates = [
+            it for it in all_items
+            if it.source_name == src_name and it.url not in selected_urls
+        ]
+        added = 0
+        for raw in candidates:
+            if added >= need:
+                break
+            result.items.append(ProcessedItem(
+                title=raw.title,
+                summary=raw.raw_content[:80] if raw.raw_content else raw.title,
+                importance="低",
+                category="其他",
+                deadline=None,
+                action_required=False,
+                action_hint=None,
+                source_url=raw.url,
+                source_name=raw.source_name,
+            ))
+            selected_urls.add(raw.url)
+            added += 1
+        if added > 0:
+            logger.info(f"  [兜底] {src_name}: +{added} 条 → 共 {source_counts.get(src_name, 0) + added} 条")
+
+    return result
+
+
+# ══════════════════════════════════════════════════════════════
 #  处理器入口
 # ══════════════════════════════════════════════════════════════
 
@@ -220,6 +316,9 @@ def run_llm_pipeline(
             top_actions=[],
             stats=stats,
         )
+
+    # ── 来源覆盖兜底：每个源至少保留 3 条 ──
+    result = _ensure_source_coverage(result, items)
 
     # 更新统计
     stats.after_filter = len(result.items)
