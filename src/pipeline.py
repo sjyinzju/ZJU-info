@@ -66,6 +66,8 @@ async def run_pipeline(config: AppConfig) -> DailyReport:
         elif cat == "l5_internal":
             collector = collector_cls(
                 src, crawl_cfg,
+                cc98_username=config.auth.cc98.username,
+                cc98_password=config.auth.cc98.password,
                 cc98_token=config.auth.cc98.token,
                 cc98_token_backup=config.auth.cc98.token_out_of_campus,
             )

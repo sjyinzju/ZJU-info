@@ -125,6 +125,8 @@ class ZjuamAuthConfig(BaseModel):
 class CC98AuthConfig(BaseModel):
     token: str = ""
     token_out_of_campus: str = ""
+    username: str = ""
+    password: str = ""
 
 
 class AuthConfig(BaseModel):

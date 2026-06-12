@@ -92,8 +92,10 @@ auth:
     username: "${ZJU_USERNAME}"                     # 学号
     password: "${ZJU_PASSWORD}"                     # 密码
   cc98:
-    token: "${CC98_TOKEN}"                          # 校内 CC98 Token
-    token_out_of_campus: "${CC98_TOKEN_OUT_OF_CAMPUS_NETWORK}"  # 校外 VPN 环境 Token
+    token: "${CC98_TOKEN}"                          # C98 Bearer Token（手动提取，备用）
+    token_out_of_campus: "${CC98_TOKEN_OUT_OF_CAMPUS_NETWORK}"  # 校外 VPN 环境 Token（备用）
+    username: "${CC98_USERNAME}"                    # CC98 用户名（非学号！如 sjy_in_zju）
+    password: "${CC98_PASSWORD}"                    # CC98 本地密码（自动获取 Token，推荐）
 
 
 # ╔══════════════════════════════════════════════════════════════════════════╗
