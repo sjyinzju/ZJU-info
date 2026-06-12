@@ -45,3 +45,4 @@ docker-compose.override.yml
 
 #Test
 run_once.py
+test_all_sources.py
