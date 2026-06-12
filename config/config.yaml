@@ -162,11 +162,11 @@ sources:
       selector: "ul.newslist li"
       max_items: 10
 
-    - name: "挑战杯官网"
-      url: "https://www.tiaozhanbei.net"
-      enabled: true
+    - name: "挑战杯官网通知+新闻"
+      url: "https://www.tiaozhanbei.net/tzb/notice"
+      enabled: false                                  # → 已改用 l0_jina
       keywords: ["通知", "报名", "结果", "获奖", "截止"]
-      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
+      selector: "a"
       max_items: 10
 
     - name: "互联网+ 创新创业大赛"
@@ -189,14 +189,6 @@ sources:
       keywords: ["报名", "进行中", "即将开始"]
       selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
       max_items: 8
-
-    # 教授/实验室主页（变更检测模式）
-    - name: "某教授实验室主页"
-      url: "https://person.zju.edu.cn/example"
-      enabled: false
-      keywords: []
-      monitor: true
-      max_items: 5
 
 
 #竞赛类
@@ -280,6 +272,12 @@ sources:
       url: "https://www.kaggle.com/competitions"
       enabled: true
       keywords: ["featured", "research", "prize", "deadline", "active"]
+      max_items: 20
+
+    - name: "挑战杯官网通知+新闻"
+      url: "https://www.tiaozhanbei.net/tzb/notice"
+      enabled: true
+      keywords: ["通知", "报名", "结果", "获奖", "截止"]
       max_items: 20
 
   # ══════════════════════════════════════════════════════════════
