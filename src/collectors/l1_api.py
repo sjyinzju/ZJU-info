@@ -55,6 +55,9 @@ class L1ApiCollector(BaseCollector):
             "Content-Type": "application/json",
             "User-Agent": self.user_agent,
         }
+        extra_h = getattr(self.source, "extra_headers", None)
+        if extra_h:
+            headers.update(extra_h)
         last_error = None
 
         for attempt in range(self.max_retries):
@@ -106,7 +109,7 @@ class L1ApiCollector(BaseCollector):
             pub_time = None
             date_str = self._get_field(rec, self.date_field)
             if date_str:
-                for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d"]:
+                for fmt in ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d"]:
                     try:
                         pub_time = datetime.strptime(date_str, fmt)
                         break
@@ -129,9 +132,14 @@ class L1ApiCollector(BaseCollector):
                     continue
 
             item_url = url
-            if tzljdz:
+            # url_field + url_prefix: e.g. nnid → https://dasai.lanqiao.cn/notices/839
+            if self.url_field and self.url_field != "xwid":
+                id_val = self._get_field(rec, self.url_field)
+                if id_val and self.url_prefix:
+                    item_url = self.url_prefix + id_val
+            if item_url == url and tzljdz:
                 item_url = tzljdz
-            elif xwid and self.detail_url_template:
+            if item_url == url and xwid and self.detail_url_template:
                 item_url = self.detail_url_template.format(xwid=xwid)
 
             # 内容：选取有意义的字段构建可读文本

@@ -145,6 +145,16 @@ class SourceConfig(BaseModel):
     wait_selector: Optional[str] = None  # Playwright 用
     monitor: bool = False
     account_name: Optional[str] = None  # 微信公众号用
+    # ── l1_api 专用字段 ──
+    method: Optional[str] = None       # GET or POST
+    body: Optional[dict] = None        # POST 请求体
+    list_path: Optional[str] = None    # JSON 中列表路径，如 "datalist" 或 "result.records"
+    title_field: Optional[str] = None  # 标题字段名
+    date_field: Optional[str] = None   # 日期字段名
+    url_field: Optional[str] = None    # URL/id 字段名
+    url_prefix: Optional[str] = None   # 详情页 URL 前缀
+    detail_url_template: Optional[str] = None  # 详情页 URL 模板
+    extra_headers: Optional[dict] = None  # 额外请求头
     # ── l0_kaggle 专用字段 ──
     max_competitions: Optional[int] = None  # Kaggle 竞赛最大数
     max_kernels: Optional[int] = None       # Kaggle Kernel 最大数

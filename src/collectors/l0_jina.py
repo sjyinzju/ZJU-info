@@ -128,9 +128,7 @@ class L0JinaCollector(BaseCollector):
         items = []
         seen_urls = set()
 
-        for i, (title, href) in enumerate(matches):
-            if i >= self.source.max_items:
-                break
+        for title, href in matches:
 
             title = title.strip()
             href = href.strip()
@@ -152,15 +150,26 @@ class L0JinaCollector(BaseCollector):
                 continue
             seen_urls.add(href)
 
+            # 达到上限（只统计实际保留的条目数）
+            if len(items) >= self.source.max_items:
+                break
+
             # 补全相对 URL
             full_url = urljoin(base_url, href) if not href.startswith("http") else href
 
-            # 提取链接周围的上下文（前后各 100 字）
+            # 提取链接周围的上下文（链接后 300 字，覆盖报名时间/比赛时间等详情）
             try:
                 idx = md_text.index(f"[{title}]({href})")
-                start = max(0, idx - 100)
-                end = min(len(md_text), idx + len(title) + len(href) + 100)
-                context = md_text[start:end].strip()
+                # 起点：链接前的标题行开头（如有 #### 标记）
+                line_start = md_text.rfind("\n", 0, idx) + 1
+                # 终点：链接后 300 字或到下一个 #### 标题
+                after_link = idx + len(f"[{title}]({href})")
+                next_section = md_text.find("\n#### ", after_link)
+                if next_section > 0 and next_section - after_link < 400:
+                    end = next_section
+                else:
+                    end = min(len(md_text), after_link + 300)
+                context = md_text[line_start:end].strip()
             except ValueError:
                 context = title
 

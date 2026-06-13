@@ -176,12 +176,6 @@ sources:
       selector: "div.dynamic-message-box a"
       max_items: 10
 
-    - name: "牛客网竞赛"
-      url: "https://ac.nowcoder.com/acm/contest/vip-index"
-      enabled: true
-      keywords: ["报名", "进行中", "即将开始"]
-      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
-      max_items: 8
 
     - name: "浙大图书馆 讲座展览"
       url: "https://libweb.zju.edu.cn/jzyl/list.htm"
@@ -256,11 +250,6 @@ sources:
       keywords: ["项目", "课程", "通知", "公告", "科研"]
       max_items: 15
 
-    - name: "蓝桥杯大赛"
-      url: "https://dasai.lanqiao.cn/notices/?progid=20"
-      enabled: true
-      keywords: ["报名", "省赛", "国赛", "通知", "获奖"]
-      max_items: 20
 
     - name: "华为开发者大赛"
       url: "https://developer.huaweicloud.com/competition/list"
@@ -285,6 +274,12 @@ sources:
       enabled: true
       keywords: ["registration", "deadline", "results", "MCM", "ICM", "contest"]
       max_items: 10
+
+    - name: "牛客网竞赛"
+      url: "https://ac.nowcoder.com/acm/contest/vip-index"
+      enabled: true
+      keywords: ["报名", "进行中", "即将开始", "周赛", "练习赛", "Round"]
+      max_items: 8
 
   # ══════════════════════════════════════════════════════════════
   #  L0 Auto — readability 算法自动化提取（零选择器维护）
@@ -434,6 +429,21 @@ sources:
       date_field: "fbsj"
       url_field: "xwid"
       detail_url_template: "https://www.career.zju.edu.cn/notification/detail?xwid={xwid}"
+
+    - name: "蓝桥杯大赛"
+      url: "https://www.guoxinlanqiao.com/api/news/find?status=1&project=dasai&progid=20&pageno=1&pagesize=10"
+      enabled: true
+      keywords: ["报名", "省赛", "国赛", "通知", "获奖"]
+      max_items: 10
+      method: "GET"
+      list_path: "datalist"
+      title_field: "title"
+      date_field: "publishTime"
+      url_field: "nnid"
+      url_prefix: "https://dasai.lanqiao.cn/notices/"
+      extra_headers:
+        Origin: "https://dasai.lanqiao.cn"
+        Referer: "https://dasai.lanqiao.cn/"
 
 #以下通过jina API获取
 
