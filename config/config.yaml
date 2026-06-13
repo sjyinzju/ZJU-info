@@ -314,6 +314,21 @@ sources:
   #  L0 Lib 已废弃 — 图书馆已迁移至 l0_html
 
   l1_api:
+    - name: "浙大素质拓展平台 重要通知"
+      url: "https://sztz.zju.edu.cn/dekt/student/tzgg/ajaxList"
+      enabled: true
+      keywords: ["二课", "三课", "记点", "审核", "项目", "社会实践", "认定", "第二课堂"]
+      max_items: 14
+      method: "POST"
+      body_format: "form"
+      body: "pageIndex=1&pageSize=14&count=0"
+      list_path: "data"
+      title_field: "mc"
+      date_field: "fbsj"
+      extra_headers:
+        Content-Type: "application/x-www-form-urlencoded"
+        Referer: "https://sztz.zju.edu.cn/dekt/"
+
     - name: "Semantic Scholar AI"
       url: "https://api.semanticscholar.org/graph/v1/paper/search?query=artificial+intelligence&limit=20"
       enabled: false

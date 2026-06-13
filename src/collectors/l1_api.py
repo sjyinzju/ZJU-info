@@ -32,6 +32,7 @@ class L1ApiCollector(BaseCollector):
         # 读取 extra 配置
         self.method = getattr(source, "method", "GET") or "GET"
         self.body = getattr(source, "body", None) or {}
+        self.body_format = getattr(source, "body_format", None) or "json"
         self.list_path = getattr(source, "list_path", None) or "result.records"
         self.title_field = getattr(source, "title_field", None) or "xwbt"
         self.date_field = getattr(source, "date_field", None) or "fbsj"
@@ -65,7 +66,10 @@ class L1ApiCollector(BaseCollector):
                 if attempt > 0:
                     time.sleep(2 ** attempt)
                 if self.method.upper() == "POST":
-                    resp = requests.post(url, headers=headers, json=self.body, timeout=self.timeout)
+                    if self.body_format == "form":
+                        resp = requests.post(url, headers=headers, data=self.body, timeout=self.timeout)
+                    else:
+                        resp = requests.post(url, headers=headers, json=self.body, timeout=self.timeout)
                 else:
                     resp = requests.get(url, headers=headers, timeout=self.timeout)
 

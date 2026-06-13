@@ -160,7 +160,8 @@ class SourceConfig(BaseModel):
     max_kernels: Optional[int] = None       # Kaggle Kernel 最大数
     # ── l1_api 专用字段 ──
     method: Optional[str] = None         # GET / POST
-    body: Optional[dict] = None          # POST 请求体
+    body: Optional[Any] = None           # POST 请求体 (dict for JSON, str for form)
+    body_format: Optional[str] = None    # "json" or "form"
     list_path: Optional[str] = None      # JSON 中列表字段路径，如 "result.records"
     title_field: Optional[str] = None    # JSON 中标题字段
     date_field: Optional[str] = None     # JSON 中日期字段
