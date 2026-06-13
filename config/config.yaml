@@ -251,12 +251,6 @@ sources:
       max_items: 15
 
 
-    - name: "华为开发者大赛"
-      url: "https://developer.huaweicloud.com/competition/list"
-      enabled: true
-      keywords: ["报名", "通知", "赛题", "开发者"]
-      max_items: 20
-
     - name: "Kaggle 竞赛"
       url: "https://www.kaggle.com/competitions"
       enabled: false                               # → 已改用 l0_kaggle（官方 API）
@@ -444,6 +438,26 @@ sources:
       extra_headers:
         Origin: "https://dasai.lanqiao.cn"
         Referer: "https://dasai.lanqiao.cn/"
+
+    - name: "华为开发者大赛"
+      url: "https://devdata2.huaweicloud.com/rest/developer/fwdo/rest/developer/servlet/hdcompetitionservice/v1/competition/get-competition-list"
+      enabled: true
+      keywords: ["AI", "大模型", "算法", "开发者", "创新", "设计"]
+      max_items: 10
+      method: "POST"
+      body:
+        category_id: "a849fed4b5fa11ef9f37fa163ebe27b7"
+        statuses: "0"
+        track_id: ""
+        technology_id: ""
+        limit: 10
+        offset: 1
+        name: ""
+      list_path: "results"
+      title_field: "title"
+      date_field: "countdown"
+      extra_headers:
+        Referer: "https://developer.huaweicloud.com/"
 
 #以下通过jina API获取
 

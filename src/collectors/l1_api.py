@@ -142,19 +142,39 @@ class L1ApiCollector(BaseCollector):
             if item_url == url and xwid and self.detail_url_template:
                 item_url = self.detail_url_template.format(xwid=xwid)
 
-            # 内容：选取有意义的字段构建可读文本
+            # 内容：通用字段提取（适配不同 API 的字段名）
             content_parts = []
-            if xwnr and xwnr != "null":
-                content_parts.append(xwnr)
-            xwfbt = self._get_field(rec, "xwfbt")
-            if xwfbt:
-                content_parts.append(xwfbt)
-            hdsj = self._get_field(rec, "hdsj")
-            if hdsj:
-                content_parts.append(f"活动时间: {hdsj}")
+            # 常见内容字段
+            for field_name in ("xwnr", "brief", "description", "summary", "xwfbt"):
+                val = self._get_field(rec, field_name)
+                if val and val != "null" and val != title:
+                    content_parts.append(val[:300])
+                    break
+            # 奖金
+            bonus = self._get_field(rec, "bonus")
+            if bonus and bonus != "0":
+                content_parts.append(f"奖金: {bonus}")
+            # 主办方
+            org = self._get_field(rec, "organizers")
+            if org:
+                content_parts.append(f"主办: {org}")
+            # 已报名人数
+            reg = self._get_field(rec, "registered_person_num")
+            if reg and reg != "0":
+                content_parts.append(f"已报名: {reg}人")
+            # 当前阶段
+            stage = self._get_field(rec, "current_stage_Name")
+            if stage:
+                content_parts.append(f"当前阶段: {stage}")
+            # 活动时间/地点
+            for t_field in ("hdsj", "start_time"):
+                t_val = self._get_field(rec, t_field)
+                if t_val:
+                    content_parts.append(f"时间: {t_val}")
+                    break
             hddd = self._get_field(rec, "hddd")
             if hddd:
-                content_parts.append(f"活动地点: {hddd}")
+                content_parts.append(f"地点: {hddd}")
             if tzljdz and ("weixin" in tzljdz or "mp.weixin" in tzljdz):
                 content_parts.append("(全文见微信公众号)")
             if not content_parts:
