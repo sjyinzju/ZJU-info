@@ -329,6 +329,36 @@ sources:
         Content-Type: "application/x-www-form-urlencoded"
         Referer: "https://sztz.zju.edu.cn/dekt/"
 
+    - name: "本科生院 重点提示"
+      url: "http://kyjs.zju.edu.cn/prod-api/home/news/page?pageNum=1&pageSize=10&position=2"
+      enabled: true
+      keywords: ["竞赛", "科研", "项目", "申报", "立项", "答辩", "公示", "大创", "SRTP"]
+      max_items: 10
+      method: "GET"
+      list_path: "data.records"
+      title_field: "title"
+      date_field: "publishTime"
+
+    - name: "科研训练管理系统"
+      url: "http://kyjs.zju.edu.cn/dcxm-api/app-api/news/page?pageNo=1&pageSize=10&topicId=10001"
+      enabled: true
+      keywords: ["申报", "立项", "中期", "结题", "验收", "SRTP", "国创", "省创", "科研训练"]
+      max_items: 10
+      method: "GET"
+      list_path: "data.list"
+      title_field: "title"
+      date_field: "publishTime"
+
+    - name: "竞赛管理系统"
+      url: "http://kyjs.zju.edu.cn/prod-api/home/news/page?pageNum=1&pageSize=10&topicId=10000"
+      enabled: true
+      keywords: ["竞赛", "报名", "通知", "获奖", "结果", "公示", "挑战杯", "互联网", "数学建模"]
+      max_items: 10
+      method: "GET"
+      list_path: "data.records"
+      title_field: "title"
+      date_field: "publishTime"
+
     - name: "Semantic Scholar AI"
       url: "https://api.semanticscholar.org/graph/v1/paper/search?query=artificial+intelligence&limit=20"
       enabled: false

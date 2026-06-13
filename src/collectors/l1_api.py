@@ -149,7 +149,7 @@ class L1ApiCollector(BaseCollector):
             # 内容：通用字段提取（适配不同 API 的字段名）
             content_parts = []
             # 常见内容字段
-            for field_name in ("xwnr", "brief", "description", "summary", "xwfbt"):
+            for field_name in ("content", "xwnr", "brief", "description", "summary", "xwfbt"):
                 val = self._get_field(rec, field_name)
                 if val and val != "null" and val != title:
                     content_parts.append(val[:300])
