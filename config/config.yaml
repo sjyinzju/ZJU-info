@@ -169,11 +169,11 @@ sources:
       selector: "a"
       max_items: 10
 
-    - name: "互联网+ 创新创业大赛"
-      url: "https://cy.ncss.cn"
+    - name: "互联网+ 大赛动态"
+      url: "https://cy.ncss.cn/information/dsdtlist?typeCode=CYDS_2TH_DSDT&title=&pageIndex=0&pageSize=10"
       enabled: true
-      keywords: ["报名", "通知", "决赛", "获奖"]
-      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
+      keywords: ["通知", "报名", "决赛", "获奖", "公示"]
+      selector: "div.dynamic-message-box a"
       max_items: 10
 
     - name: "美赛 COMAP (MCM/ICM)"
@@ -189,6 +189,13 @@ sources:
       keywords: ["报名", "进行中", "即将开始"]
       selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
       max_items: 8
+
+    - name: "浙大图书馆 讲座展览"
+      url: "https://libweb.zju.edu.cn/jzyl/list.htm"
+      enabled: true
+      keywords: ["讲座", "展览", "数据库", "培训", "书香浙大", "开卷有益", "预告", "报名", "求真一小时", "活动报名"]
+      selector: "span.news_title a"
+      max_items: 15
 
 
 #竞赛类
@@ -234,13 +241,13 @@ sources:
 
     - name: "浙大就业 活动通知"
       url: "https://www.career.zju.edu.cn/notification/announcementList?lmid=739BEBB72A0B2B25E0538713470A6C41"
-      enabled: true
+      enabled: false                               # → 已改用 l1_api（后端 JSON API）
       keywords: ["招聘", "双选会", "宣讲会", "实习", "校招"]
       max_items: 15
 
     - name: "浙大就业 指导活动"
       url: "https://www.career.zju.edu.cn/notification/announcementList?lmid=739BEBB72A0D2B25E0538713470A6C41"
-      enabled: true
+      enabled: false                               # → 已改用 l1_api（后端 JSON API）
       keywords: ["讲座", "培训", "咨询", "指导"]
       max_items: 15
 
@@ -304,14 +311,7 @@ sources:
       max_items: 20
 
   # ══════════════════════════════════════════════════════════════
-  #  L0 Lib — 图书馆讲座展览专用（列表→详情页双层抓取）
-  # ══════════════════════════════════════════════════════════════
-  l0_lib:
-    - name: "浙大图书馆 讲座展览"
-      url: "https://libweb.zju.edu.cn/jzyl/list.htm"
-      enabled: true
-      keywords: ["讲座", "展览", "数据库", "培训"]
-      max_items: 3  # 抓取前 3 页（~78 条，覆盖约 2 个月）
+  #  L0 Lib 已废弃 — 图书馆已迁移至 l0_html
 
   l1_api:
     - name: "Semantic Scholar AI"
@@ -343,6 +343,86 @@ sources:
       enabled: false
       keywords: ["讲座", "活动", "竞赛", "招生"]
       max_items: 5
+
+    - name: "浙大就业 活动通知"
+      url: "https://www.career.zju.edu.cn/web/wsjysc/lbxq/getTzggPageList"
+      enabled: true
+      keywords: ["招聘", "双选会", "宣讲会", "实习", "校招"]
+      max_items: 15
+      method: "POST"
+      body:
+        current: 1
+        jbdd: ""
+        jssj: ""
+        keyword: ""
+        kssj: ""
+        lmid: "739BEBB72A0B2B25E0538713470A6C41"
+        size: 15
+      list_path: "result.records"
+      title_field: "xwbt"
+      date_field: "fbsj"
+      url_field: "xwid"
+      detail_url_template: "https://www.career.zju.edu.cn/notification/detail?xwid={xwid}"
+
+    - name: "浙大就业 指导活动"
+      url: "https://www.career.zju.edu.cn/web/wsjysc/lbxq/getTzggPageList"
+      enabled: true
+      keywords: ["讲座", "培训", "咨询", "指导"]
+      max_items: 15
+      method: "POST"
+      body:
+        current: 1
+        jbdd: ""
+        jssj: ""
+        keyword: ""
+        kssj: ""
+        lmid: "739BEBB72A0D2B25E0538713470A6C41"
+        size: 15
+      list_path: "result.records"
+      title_field: "xwbt"
+      date_field: "fbsj"
+      url_field: "xwid"
+      detail_url_template: "https://www.career.zju.edu.cn/notification/detail?xwid={xwid}"
+
+    - name: "浙大就业 经验分享"
+      url: "https://www.career.zju.edu.cn/web/wsjysc/lbxq/getTzggPageList"
+      enabled: true
+      keywords: ["经验", "分享", "求职", "面试", "留学"]
+      max_items: 15
+      method: "POST"
+      body:
+        current: 1
+        jbdd: ""
+        jssj: ""
+        keyword: ""
+        kssj: ""
+        lmid: "739BEBB72A122B25E0538713470A6C41"
+        size: 15
+      list_path: "result.records"
+      title_field: "xwbt"
+      date_field: "fbsj"
+      url_field: "xwid"
+      detail_url_template: "https://www.career.zju.edu.cn/notification/detail?xwid={xwid}"
+
+    - name: "浙大就业 职规大赛"
+      url: "https://www.career.zju.edu.cn/web/wsjysc/lbxq/getTzggPageList"
+      enabled: true
+      keywords: ["大赛", "职业规划", "比赛", "报名"]
+      max_items: 15
+      method: "POST"
+      body:
+        current: 1
+        jbdd: ""
+        jssj: ""
+        keyword: ""
+        kssj: ""
+        lmid: "739BEBB72A112B25E0538713470A6C41"
+        size: 15
+      list_path: "result.records"
+      title_field: "xwbt"
+      date_field: "fbsj"
+      url_field: "xwid"
+      detail_url_template: "https://www.career.zju.edu.cn/notification/detail?xwid={xwid}"
 
 #以下通过jina API获取
 

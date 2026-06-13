@@ -366,17 +366,23 @@ class L0HtmlCollector(BaseCollector):
     # ── 日期解析 ─────────────────────────────────────────────
 
     def _extract_date(self, element) -> str:
-        for pat in [
+        patterns = [
             ".date", ".time", ".pub-date", ".post-date",
             "span.time", ".news-date", ".list-date",
+            ".pull-right span",
             "[class*=date]", "[class*=time]",
-        ]:
-            try:
-                found = element.select_one(pat)
-                if found:
-                    return found.get_text(strip=True)
-            except Exception:
-                pass
+        ]
+        # 先从元素自身查找，再从父元素查找（日期可能在兄弟节点）
+        for search_root in (element, element.parent if element.parent else None):
+            if search_root is None:
+                continue
+            for pat in patterns:
+                try:
+                    found = search_root.select_one(pat)
+                    if found:
+                        return found.get_text(strip=True)
+                except Exception:
+                    pass
         return ""
 
     def _parse_date(self, date_text: str) -> Optional[datetime]:

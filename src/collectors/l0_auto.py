@@ -175,13 +175,14 @@ class L0AutoCollector(BaseCollector):
         items = []
         now = datetime.now()
         seen_urls = set()
+        seen_titles = set()
         count = 0
 
         for a in links:
             if count >= self.source.max_items:
                 break
 
-            title = a.get_text(strip=True)
+            raw_text = a.get_text(strip=True)
             href = a.get("href", "")
             if not href or href in seen_urls:
                 continue
@@ -189,14 +190,33 @@ class L0AutoCollector(BaseCollector):
 
             full_url = urljoin(base_url, href)
 
-            # 尝试提取该链接所在行的日期
-            parent = a.parent
-            parent_text = parent.get_text(" ", strip=True) if parent else title
-            date_text = self._extract_date_from_text(parent_text)
+            # ── 标题清洗：分离标题和正文 ──
+            title, date_text = self._split_title_and_date(raw_text)
+
+            # 标题去重（同一标题只保留一条）
+            title_key = title[:40]
+            if title_key in seen_titles:
+                continue
+            seen_titles.add(title_key)
+
             pub_time = self._parse_date(date_text)
 
-            # 取链接所在元素的完整文本作为上下文（截断到 500 字）
-            context = parent_text[:500]
+            # ── 上下文隔离：沿 DOM 向上找到最近的独立块元素 ──
+            container = a.parent
+            while container and container.name not in ("li", "tr", "td", "p", "dt", "dd", "article"):
+                # 如果 parent 是 div/span，继续往上找
+                if container.parent and container.name in ("div", "span", "a"):
+                    container = container.parent
+                else:
+                    break
+
+            if container and container.name not in ("a",):
+                context = container.get_text(" ", strip=True)
+            else:
+                context = raw_text
+
+            # 截断上下文
+            context = context[:500] if len(context) > 500 else context
 
             items.append(RawItem(
                 source_name=self.source.name,
@@ -210,6 +230,48 @@ class L0AutoCollector(BaseCollector):
             count += 1
 
         return items
+
+    def _split_title_and_date(self, raw_text: str) -> tuple:
+        """从原始文本中分离标题和日期
+
+        常见格式:
+          - "重点通知与公示公告2026-04-01浙江大学人工智能学院关于..."
+          - "2026-04-01通知内容标题..."
+          - "[通知]2026-04-01标题..."
+
+        Returns: (title, date_string)
+        """
+        # 匹配日期模式
+        date_patterns = [
+            (r'(\d{4}-\d{2}-\d{2})', "%Y-%m-%d"),
+            (r'(\d{4}/\d{2}/\d{2})', "%Y/%m/%d"),
+            (r'(\d{4}年\d{1,2}月\d{1,2}日)', "%Y年%m月%d日"),
+        ]
+
+        date_str = ""
+        title = raw_text
+
+        for pattern, _ in date_patterns:
+            m = re.search(pattern, raw_text)
+            if m:
+                date_str = m.group(1)
+                # 取日期后面的内容作为标题
+                after_date = raw_text[m.end():].strip()
+                if len(after_date) > 6:
+                    title = after_date[:120]  # 标题最长 120 字
+                else:
+                    # 日期在末尾，标题在前
+                    title = raw_text[:m.start()].strip()[:120]
+                break
+
+        # 如果没有日期，直接截断标题
+        if not date_str:
+            title = raw_text[:120]
+
+        # 去掉标题中的多余符号
+        title = title.strip("｜|【】[] ，,。.")
+
+        return title, date_str
 
     def _extract_article(
         self, html: str, url: str, soup_full: BeautifulSoup

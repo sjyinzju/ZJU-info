@@ -145,6 +145,15 @@ class SourceConfig(BaseModel):
     wait_selector: Optional[str] = None  # Playwright 用
     monitor: bool = False
     account_name: Optional[str] = None  # 微信公众号用
+    # ── l1_api 专用字段 ──
+    method: Optional[str] = None         # GET / POST
+    body: Optional[dict] = None          # POST 请求体
+    list_path: Optional[str] = None      # JSON 中列表字段路径，如 "result.records"
+    title_field: Optional[str] = None    # JSON 中标题字段
+    date_field: Optional[str] = None     # JSON 中日期字段
+    url_field: Optional[str] = None      # JSON 中 URL 字段
+    url_prefix: Optional[str] = None     # URL 前缀
+    detail_url_template: Optional[str] = None  # 详情页 URL 模板，如 "https://x.com/detail?xwid={xwid}"
 
 
 class SourcesConfig(BaseModel):
