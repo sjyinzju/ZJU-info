@@ -113,22 +113,45 @@ class L1ApiCollector(BaseCollector):
                     except ValueError:
                         continue
 
-            # 构建详情 URL
-            item_url = url
-            detail_id = self._get_field(rec, self.url_field)
-            tzljdz = self._get_field(rec, "tzljdz")  # 外部链接（ZJU 系统常用）
+            # 构建详情 URL + 噪音过滤
+            tzljdz = self._get_field(rec, "tzljdz")
             xwid = self._get_field(rec, "xwid")
+            xwnr = self._get_field(rec, "xwnr")
 
+            # ── 噪音过滤 ──
+            # 1. 跳过图片 URL
+            if tzljdz and any(tzljdz.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".bmp")):
+                continue
+            # 2. 跳过内容为空的"平台首页"类条目
+            if (not xwnr or xwnr == "null") and (not tzljdz):
+                # 标题看起来像平台名而非活动通知
+                if any(kw in title for kw in ["就业服务平台", "就业中心首页", "首页"]):
+                    continue
+
+            item_url = url
             if tzljdz:
                 item_url = tzljdz
             elif xwid and self.detail_url_template:
                 item_url = self.detail_url_template.format(xwid=xwid)
-            elif detail_id and self.url_prefix:
-                item_url = urljoin(self.url_prefix, str(detail_id))
 
-            # 内容：用所有非空字段拼接
-            content_parts = [f"{k}={v}" for k, v in rec.items() if v and k not in (self.title_field,)]
-            content = "; ".join(content_parts[:5])[:500]
+            # 内容：选取有意义的字段构建可读文本
+            content_parts = []
+            if xwnr and xwnr != "null":
+                content_parts.append(xwnr)
+            xwfbt = self._get_field(rec, "xwfbt")
+            if xwfbt:
+                content_parts.append(xwfbt)
+            hdsj = self._get_field(rec, "hdsj")
+            if hdsj:
+                content_parts.append(f"活动时间: {hdsj}")
+            hddd = self._get_field(rec, "hddd")
+            if hddd:
+                content_parts.append(f"活动地点: {hddd}")
+            if tzljdz and ("weixin" in tzljdz or "mp.weixin" in tzljdz):
+                content_parts.append("(全文见微信公众号)")
+            if not content_parts:
+                content_parts.append(title)
+            content = " | ".join(content_parts)[:500]
 
             items.append(RawItem(
                 source_name=self.source.name,

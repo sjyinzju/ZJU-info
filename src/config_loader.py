@@ -145,6 +145,9 @@ class SourceConfig(BaseModel):
     wait_selector: Optional[str] = None  # Playwright 用
     monitor: bool = False
     account_name: Optional[str] = None  # 微信公众号用
+    # ── l0_kaggle 专用字段 ──
+    max_competitions: Optional[int] = None  # Kaggle 竞赛最大数
+    max_kernels: Optional[int] = None       # Kaggle Kernel 最大数
     # ── l1_api 专用字段 ──
     method: Optional[str] = None         # GET / POST
     body: Optional[dict] = None          # POST 请求体
@@ -162,6 +165,7 @@ class SourcesConfig(BaseModel):
     l0_jina: List[SourceConfig] = Field(default_factory=list)
     l0_auto: List[SourceConfig] = Field(default_factory=list)
     l0_lib: List[SourceConfig] = Field(default_factory=list)
+    l0_kaggle: List[SourceConfig] = Field(default_factory=list)
     l1_api: List[SourceConfig] = Field(default_factory=list)
     l1_playwright: List[SourceConfig] = Field(default_factory=list)
     l2_wechat: List[SourceConfig] = Field(default_factory=list)
@@ -172,7 +176,8 @@ class SourcesConfig(BaseModel):
         """返回所有启用的源，格式: [(category, SourceConfig), ...]"""
         result = []
         for cat in [
-            "l0_rss", "l0_html", "l0_jina", "l0_auto", "l0_lib",
+            "l0_rss", "l0_html", "l0_jina", "l0_auto",
+            "l0_kaggle", "l0_lib",
             "l1_api", "l1_playwright",
             "l2_wechat", "l4_zjuam", "l5_internal",
         ]:

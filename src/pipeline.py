@@ -13,6 +13,7 @@ from src.collectors.l0_rss import L0RssCollector
 from src.collectors.l0_html import L0HtmlCollector
 from src.collectors.l0_jina import L0JinaCollector
 from src.collectors.l0_auto import L0AutoCollector
+from src.collectors.l0_kaggle import L0KaggleCollector
 from src.collectors.l1_api import L1ApiCollector
 from src.collectors.l0_lib import L0LibCollector
 from src.collectors.l1_playwright import L1PlaywrightCollector
@@ -32,6 +33,7 @@ COLLECTOR_MAP = {
     "l0_jina": L0JinaCollector,
     "l0_auto": L0AutoCollector,
     "l0_lib": L0LibCollector,
+    "l0_kaggle": L0KaggleCollector,
     "l1_api": L1ApiCollector,
     "l1_playwright": L1PlaywrightCollector,
     "l4_zjuam": L4ZjuAmCollector,

@@ -176,13 +176,6 @@ sources:
       selector: "div.dynamic-message-box a"
       max_items: 10
 
-    - name: "美赛 COMAP (MCM/ICM)"
-      url: "https://www.comap.com/contests/mcm-icm"
-      enabled: true
-      keywords: ["registration", "deadline", "results"]
-      selector: "a"                                   # 📝 需 F12 找新闻列表选择器替换
-      max_items: 10
-
     - name: "牛客网竞赛"
       url: "https://ac.nowcoder.com/acm/contest/vip-index"
       enabled: true
@@ -277,7 +270,7 @@ sources:
 
     - name: "Kaggle 竞赛"
       url: "https://www.kaggle.com/competitions"
-      enabled: true
+      enabled: false                               # → 已改用 l0_kaggle（官方 API）
       keywords: ["featured", "research", "prize", "deadline", "active"]
       max_items: 20
 
@@ -286,6 +279,12 @@ sources:
       enabled: true
       keywords: ["通知", "报名", "结果", "获奖", "截止"]
       max_items: 20
+
+    - name: "美赛 COMAP (MCM/ICM)"
+      url: "https://www.comap.com/blog/news-announcements"
+      enabled: true
+      keywords: ["registration", "deadline", "results", "MCM", "ICM", "contest"]
+      max_items: 10
 
   # ══════════════════════════════════════════════════════════════
   #  L0 Auto — readability 算法自动化提取（零选择器维护）
@@ -311,6 +310,18 @@ sources:
       max_items: 20
 
   # ══════════════════════════════════════════════════════════════
+  #  L0 Kaggle — Kaggle 官方 API（竞赛 + 高质量 Kernel）
+  # ══════════════════════════════════════════════════════════════
+  l0_kaggle:
+    - name: "Kaggle 竞赛与Kernel"
+      url: "kaggle://api"                             # 占位 URL（数据来自 Kaggle API）
+      enabled: true
+      keywords: ["LLM", "agent", "reinforcement", "computer vision", "NLP", "generative",
+                 "deep learning", "classification", "segmentation", "recommender"]
+      max_items: 18
+      max_competitions: 10
+      max_kernels: 8
+
   #  L0 Lib 已废弃 — 图书馆已迁移至 l0_html
 
   l1_api:
