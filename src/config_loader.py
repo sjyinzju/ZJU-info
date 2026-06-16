@@ -155,6 +155,7 @@ class SourceConfig(BaseModel):
     url_prefix: Optional[str] = None   # 详情页 URL 前缀
     detail_url_template: Optional[str] = None  # 详情页 URL 模板
     extra_headers: Optional[dict] = None  # 额外请求头
+    link_url_must_contain: Optional[str] = None  # l0_jina: URL 必须包含此字符串
     # ── l0_kaggle 专用字段 ──
     max_competitions: Optional[int] = None  # Kaggle 竞赛最大数
     max_kernels: Optional[int] = None       # Kaggle Kernel 最大数

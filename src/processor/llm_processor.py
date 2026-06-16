@@ -106,6 +106,17 @@ def build_system_prompt(config: AppConfig) -> str:
     )
     parts.append(lib_rule)
 
+    # 浙大体艺
+    tyys_rule = (
+        "## !! 关于浙大体艺来源（最高优先级保留指令）\n"
+        "浙大体艺（公共体育与艺术部）发布的活动是学校官方文体活动。\n"
+        "1. 带有 [体艺·高优先级] 前缀的是含「报名」「抢票」「二课分」的活动，**必须全部保留**并标注为高重要度\n"
+        "2. 带有 [体艺·必保留] 前缀的活动至少保留 50%\n"
+        "3. 涉及三好杯、校运会、演出、音乐会、话剧、工作坊、培训、学长带你玩艺术等活动均应保留\n"
+        "仅当活动日期已明确过期时才可过滤"
+    )
+    parts.append(tyys_rule)
+
     # 来源覆盖要求
     parts.append(
         "## 来源覆盖要求\n"
@@ -126,7 +137,7 @@ def build_user_message(items: List[RawItem]) -> str:
     lines = ["以下是今日采集到的信息，请筛选、分类、摘要：", ""]
 
     # 管理学院和 CC98 条目优先排列（引导 LLM 给予更多关注）
-    priority_items = [it for it in items if "管理学院" in (it.source_name or "") or "CC98" in (it.source_name or "")]
+    priority_items = [it for it in items if "管理学院" in (it.source_name or "") or "CC98" in (it.source_name or "") or "浙大体艺" in (it.source_name or "")]
     other_items = [it for it in items if it not in priority_items]
     sorted_items = priority_items + other_items
 
@@ -143,10 +154,18 @@ def build_user_message(items: List[RawItem]) -> str:
     for i, item in enumerate(sorted_items, 1):
         pub_str = item.publish_time.strftime("%Y-%m-%d") if item.publish_time else "未知日期"
 
-        # 管理学院 / CC98 帖子自动标注优先级：
+        # 管理学院 / CC98 / 浙大体艺 自动标注优先级：
         title_prefix = ""
         if "管理学院" in (item.source_name or ""):
             title_prefix = "[学院通知·必保留] "
+            item.title = f"{title_prefix}{item.title}"
+        elif "浙大体艺" in (item.source_name or ""):
+            searchable = f"{item.title} {item.raw_content or ''}"
+            urgent = any(kw in searchable for kw in ["报名", "抢票", "二课分"])
+            if urgent:
+                title_prefix = "[体艺·高优先级] "
+            else:
+                title_prefix = "[体艺·必保留] "
             item.title = f"{title_prefix}{item.title}"
         elif "CC98" in (item.source_name or ""):
             searchable = f"{item.title} {item.raw_content or ''}".lower()

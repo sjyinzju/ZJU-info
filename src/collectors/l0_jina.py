@@ -140,10 +140,14 @@ class L0JinaCollector(BaseCollector):
             if href.startswith("#"):
                 continue
             # 仅过滤最明显的 UI 噪音（其余由 LLM 筛选）
-            # 跳过纯图标/图片链接（Jina 常把图片 alt 作为链接文本）
+            # 跳过纯图标/图片链接
             if title.startswith("!["):
                 continue
             if "Image" in title and len(title) < 20:
+                continue
+            # URL 必须包含指定字符串（如 object_id=，过滤导航链接）
+            must_contain = getattr(self.source, "link_url_must_contain", None)
+            if must_contain and must_contain not in href:
                 continue
             # 去重
             if href in seen_urls:

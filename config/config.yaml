@@ -279,32 +279,37 @@ sources:
     - name: "浙大体艺-活动预告"
       url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=191753"
       enabled: true
-      keywords: ["活动预告", "抢票预告", "报名", "抢票", "预告"]
+      keywords: ["预告", "抢票", "报名", "三好杯", "活动", "培训", "演出", "音乐会", "话剧", "音乐剧", "展览", "讲座"]
       max_items: 10
+      link_url_must_contain: "object_id="
 
     - name: "浙大体艺-体育竞赛"
       url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=172451"
       enabled: true
-      keywords: ["报名", "抢票", "赛程", "预告"]
+      keywords: ["报名", "比赛", "三好杯", "校运会", "赛事", "赛程", "预告", "体育", "运动", "竞赛"]
       max_items: 10
+      link_url_must_contain: "object_id="
 
     - name: "浙大体艺-校园体艺活动"
       url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=185494"
       enabled: true
-      keywords: ["报名", "抢票", "预告"]
+      keywords: ["报名", "抢票", "预告", "演出", "音乐会", "话剧", "音乐剧", "艺术", "展览", "讲座"]
       max_items: 10
+      link_url_must_contain: "object_id="
 
     - name: "浙大体艺-工作坊展览"
       url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=185495"
       enabled: true
-      keywords: ["报名", "抢票", "预告", "大讲堂", "展览"]
+      keywords: ["报名", "抢票", "预告", "工作坊", "展览", "大讲堂", "艺术", "旅行", "体验"]
       max_items: 10
+      link_url_must_contain: "object_id="
 
     - name: "浙大体艺-竞赛学长"
       url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=185496"
       enabled: true
-      keywords: ["体验", "二课分"]
+      keywords: ["体验", "二课分", "报名", "学长", "艺术", "舞蹈", "音乐", "表演", "培训"]
       max_items: 10
+      link_url_must_contain: "object_id="
 
   # ══════════════════════════════════════════════════════════════
   #  L0 Auto — readability 算法自动化提取（零选择器维护）
