@@ -275,6 +275,37 @@ sources:
       keywords: ["报名", "进行中", "即将开始", "周赛", "练习赛", "Round"]
       max_items: 8
 
+    # ── 浙大体育与艺术 (tyys.zju.edu.cn) ──
+    - name: "浙大体艺-活动预告"
+      url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=191753"
+      enabled: true
+      keywords: ["活动预告", "抢票预告", "报名", "抢票", "预告"]
+      max_items: 10
+
+    - name: "浙大体艺-体育竞赛"
+      url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=172451"
+      enabled: true
+      keywords: ["报名", "抢票", "赛程", "预告"]
+      max_items: 10
+
+    - name: "浙大体艺-校园体艺活动"
+      url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=185494"
+      enabled: true
+      keywords: ["报名", "抢票", "预告"]
+      max_items: 10
+
+    - name: "浙大体艺-工作坊展览"
+      url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=185495"
+      enabled: true
+      keywords: ["报名", "抢票", "预告", "大讲堂", "展览"]
+      max_items: 10
+
+    - name: "浙大体艺-竞赛学长"
+      url: "http://www.tyys.zju.edu.cn/redir.php?catalog_id=185496"
+      enabled: true
+      keywords: ["体验", "二课分"]
+      max_items: 10
+
   # ══════════════════════════════════════════════════════════════
   #  L0 Auto — readability 算法自动化提取（零选择器维护）
   #  适合内网 .htm 列表页（Jina 云服务器无法访问的 URL）
